@@ -72,6 +72,12 @@ Transformer models can also perform tasks on **several modalities combined**, su
 
 🤗 Transformers is backed by the three most popular deep learning libraries — [Jax](https://jax.readthedocs.io/en/latest/), [PyTorch](https://pytorch.org/) and [TensorFlow](https://www.tensorflow.org/) — with a seamless integration between them. It's straightforward to train your models with one before loading them for inference with the other.
 
+## 学习
+
+|内容|英文地址|中文地址|
+|:-:|:-:|:-:|
+|[Fine-tune a pretrained model](https://huggingface.co/docs/transformers/training)|[Fine-tune a pretrained model](docs/source/en/training.md)|[微调预训练模型](docs/source/zh/training.md)|
+
 ## Online demos
 
 You can test most of our models directly on their pages from the [model hub](https://huggingface.co/models). We also offer [private model hosting, versioning, & an inference API](https://huggingface.co/pricing) for public and private models.

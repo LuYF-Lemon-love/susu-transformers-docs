@@ -1,22 +1,13 @@
-<!--Copyright 2022 The HuggingFace Team. All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
-the License. You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
-an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
-specific language governing permissions and limitations under the License.
-
-⚠️ Note that this file is in Markdown but contain specific syntax for our doc-builder (similar to MDX) that may not be
-rendered properly in your Markdown viewer.
-
+<!--
+# docs/source/zh/training.md
+# 
+# git pull from huggingface/transformers by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Mar 22, 2024
+# updated by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Mar 23, 2024
+# 
+# 该文档介绍了如何微调预训练模型。
 -->
 
 # 微调预训练模型
-
-[[open-in-colab]]
 
 使用预训练模型有许多显著的好处。它降低了计算成本，减少了碳排放，同时允许您使用最先进的模型，而无需从头开始训练一个。🤗 Transformers 提供了涉及各种任务的成千上万的预训练模型。当您使用预训练模型时，您需要在与任务相关的数据集上训练该模型。这种操作被称为微调，是一种非常强大的训练技术。在本教程中，您将使用您选择的深度学习框架来微调一个预训练模型：
 
