@@ -78,6 +78,7 @@ Transformer models can also perform tasks on **several modalities combined**, su
 |:-:|:-:|:-:|
 |[Fine-tune a pretrained model](https://huggingface.co/docs/transformers/training)|[Fine-tune a pretrained model](docs/source/en/training.md)|[微调预训练模型](docs/source/zh/training.md)|
 |[Distributed training with 🤗 Accelerate](https://huggingface.co/docs/transformers/accelerate)|[Distributed training with 🤗 Accelerate](docs/source/en/accelerate.md)|[🤗 加速分布式训练](docs/source/zh/accelerate.md)|
+|[Load adapters with 🤗 PEFT](https://huggingface.co/docs/transformers/peft)|[Load adapters with 🤗 PEFT](docs/source/en/peft.md)|[使用 🤗 PEFT 加载adapters](docs/source/zh/peft.md)|
 
 ## Online demos
 
