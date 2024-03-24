@@ -74,9 +74,10 @@ Transformer models can also perform tasks on **several modalities combined**, su
 
 ## 学习
 
-|内容|英文地址|中文地址|
+|Transformers 官网文档页面|英文文档地址|中文文档地址|
 |:-:|:-:|:-:|
 |[Fine-tune a pretrained model](https://huggingface.co/docs/transformers/training)|[Fine-tune a pretrained model](docs/source/en/training.md)|[微调预训练模型](docs/source/zh/training.md)|
+|[Distributed training with 🤗 Accelerate](https://huggingface.co/docs/transformers/accelerate)|[Distributed training with 🤗 Accelerate](docs/source/en/accelerate.md)|[🤗 加速分布式训练](docs/source/zh/accelerate.md)|
 
 ## Online demos
 
