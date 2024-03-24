@@ -1,76 +1,32 @@
 <!---
-Copyright 2020 The HuggingFace Team. All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+# README.md
+# 
+# git pull from huggingface/transformers by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Mar 22, 2024
+# updated by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Mar 24, 2024
+# 
+# README.md。
 -->
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://huggingface.co/datasets/huggingface/documentation-images/raw/main/transformers-logo-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://huggingface.co/datasets/huggingface/documentation-images/raw/main/transformers-logo-light.svg">
-    <img alt="Hugging Face Transformers Library" src="https://huggingface.co/datasets/huggingface/documentation-images/raw/main/transformers-logo-light.svg" width="352" height="59" style="max-width: 100%;">
+    <source media="(prefers-color-scheme: dark)" srcset="./images/transformers-logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="./images/transformers-logo-light.svg">
+    <img alt="Hugging Face Transformers Library" src="./images/transformers-logo-light.svg" width="352" height="59" style="max-width: 100%;">
   </picture>
   <br/>
   <br/>
 </p>
 
-<p align="center">
-    <a href="https://circleci.com/gh/huggingface/transformers">
-        <img alt="Build" src="https://img.shields.io/circleci/build/github/huggingface/transformers/main">
-    </a>
-    <a href="https://github.com/huggingface/transformers/blob/main/LICENSE">
-        <img alt="GitHub" src="https://img.shields.io/github/license/huggingface/transformers.svg?color=blue">
-    </a>
-    <a href="https://huggingface.co/docs/transformers/index">
-        <img alt="Documentation" src="https://img.shields.io/website/http/huggingface.co/docs/transformers/index.svg?down_color=red&down_message=offline&up_message=online">
-    </a>
-    <a href="https://github.com/huggingface/transformers/releases">
-        <img alt="GitHub release" src="https://img.shields.io/github/release/huggingface/transformers.svg">
-    </a>
-    <a href="https://github.com/huggingface/transformers/blob/main/CODE_OF_CONDUCT.md">
-        <img alt="Contributor Covenant" src="https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg">
-    </a>
-    <a href="https://zenodo.org/badge/latestdoi/155220641"><img src="https://zenodo.org/badge/155220641.svg" alt="DOI"></a>
-</p>
-
 <h4 align="center">
     <p>
         <b>English</b> |
-        <a href="https://github.com/huggingface/transformers/blob/main/README_zh-hans.md">简体中文</a> |
+        <a href="./README_zh-hans.md">简体中文</a> |
     </p>
 </h4>
 
 <h3 align="center">
-    <p>State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow</p>
-</h3>
-
-<h3 align="center">
     <a href="https://hf.co/course"><img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/course_banner.png"></a>
 </h3>
-
-🤗 Transformers provides thousands of pretrained models to perform tasks on different modalities such as text, vision, and audio.
-
-These models can be applied on:
-
-* 📝 Text, for tasks like text classification, information extraction, question answering, summarization, translation, and text generation, in over 100 languages.
-* 🖼️ Images, for tasks like image classification, object detection, and segmentation.
-* 🗣️ Audio, for tasks like speech recognition and audio classification.
-
-Transformer models can also perform tasks on **several modalities combined**, such as table question answering, optical character recognition, information extraction from scanned documents, video classification, and visual question answering.
-
-🤗 Transformers provides APIs to quickly download and use those pretrained models on a given text, fine-tune them on your own datasets and then share them with the community on our [model hub](https://huggingface.co/models). At the same time, each python module defining an architecture is fully standalone and can be modified to enable quick research experiments.
-
-🤗 Transformers is backed by the three most popular deep learning libraries — [Jax](https://jax.readthedocs.io/en/latest/), [PyTorch](https://pytorch.org/) and [TensorFlow](https://www.tensorflow.org/) — with a seamless integration between them. It's straightforward to train your models with one before loading them for inference with the other.
 
 ## 学习
 
@@ -83,8 +39,6 @@ Transformer models can also perform tasks on **several modalities combined**, su
 |[Token classification](https://huggingface.co/docs/transformers/tasks/token_classification)|[Token classification](docs/source/en/tasks/token_classification.md)|None|
 
 ## Online demos
-
-You can test most of our models directly on their pages from the [model hub](https://huggingface.co/models). We also offer [private model hosting, versioning, & an inference API](https://huggingface.co/pricing) for public and private models.
 
 Here are a few examples:
 
@@ -573,19 +527,8 @@ These implementations have been tested on several datasets (see the example scri
 | [Quick tour: Fine-tuning/usage scripts](https://github.com/huggingface/transformers/tree/main/examples) | Example scripts for fine-tuning models on a wide range of tasks |
 | [Model sharing and uploading](https://huggingface.co/docs/transformers/model_sharing) | Upload and share your fine-tuned models with the community |
 
-## Citation
+## 链接
 
-We now have a [paper](https://www.aclweb.org/anthology/2020.emnlp-demos.6/) you can cite for the 🤗 Transformers library:
-```bibtex
-@inproceedings{wolf-etal-2020-transformers,
-    title = "Transformers: State-of-the-Art Natural Language Processing",
-    author = "Thomas Wolf and Lysandre Debut and Victor Sanh and Julien Chaumond and Clement Delangue and Anthony Moi and Pierric Cistac and Tim Rault and Rémi Louf and Morgan Funtowicz and Joe Davison and Sam Shleifer and Patrick von Platen and Clara Ma and Yacine Jernite and Julien Plu and Canwen Xu and Teven Le Scao and Sylvain Gugger and Mariama Drame and Quentin Lhoest and Alexander M. Rush",
-    booktitle = "Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
-    month = oct,
-    year = "2020",
-    address = "Online",
-    publisher = "Association for Computational Linguistics",
-    url = "https://www.aclweb.org/anthology/2020.emnlp-demos.6",
-    pages = "38--45"
-}
-```
+1. [model hub](https://huggingface.co/models)
+2. [🤗 Transformers](https://huggingface.co/docs/transformers/index)
+3. [🤗 Transformers paper](https://www.aclweb.org/anthology/2020.emnlp-demos.6/)
