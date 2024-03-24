@@ -1,4 +1,4 @@
 #!/bin/bash
 git add .
-git commit -m "修改 docs/source/en/peft.md docs/source/zh/peft.md"
+git commit -m "修改 docs/source/en/tasks/sequence_classification.md"
 git push
