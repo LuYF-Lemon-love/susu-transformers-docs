@@ -37,6 +37,7 @@
 |[Load adapters with 🤗 PEFT](https://huggingface.co/docs/transformers/peft)|[Load adapters with 🤗 PEFT](docs/source/en/peft.md)|[使用 🤗 PEFT 加载adapters](docs/source/zh/peft.md)|
 |[Text classification](https://huggingface.co/docs/transformers/tasks/sequence_classification)|[Text classification](docs/source/en/tasks/sequence_classification.md)|None|
 |[Token classification](https://huggingface.co/docs/transformers/tasks/token_classification)|[Token classification](docs/source/en/tasks/token_classification.md)|None|
+|[Question answering](https://huggingface.co/docs/transformers/tasks/question_answering)|[Question answering](docs/source/en/tasks/question_answering.md)|None|
 
 ## Online demos
 
