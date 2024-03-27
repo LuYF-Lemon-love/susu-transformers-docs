@@ -39,6 +39,7 @@
 |[Token classification](https://huggingface.co/docs/transformers/tasks/token_classification)|[Token classification](docs/source/en/tasks/token_classification.md)|None|
 |[Question answering](https://huggingface.co/docs/transformers/tasks/question_answering)|[Question answering](docs/source/en/tasks/question_answering.md)|None|
 |[Causal language modeling](https://huggingface.co/docs/transformers/tasks/language_modeling)|[Causal language modeling](docs/source/en/tasks/language_modeling.md)|None|
+|[Masked language modeling](https://huggingface.co/docs/transformers/tasks/masked_language_modeling)|[Masked language modeling](docs/source/en/tasks/masked_language_modeling.md)|None|
 
 ## Online demos
 
