@@ -40,6 +40,22 @@
 |[Question answering](https://huggingface.co/docs/transformers/tasks/question_answering)|[Question answering](docs/source/en/tasks/question_answering.md)|None|
 |[Causal language modeling](https://huggingface.co/docs/transformers/tasks/language_modeling)|[Causal language modeling](docs/source/en/tasks/language_modeling.md)|None|
 |[Masked language modeling](https://huggingface.co/docs/transformers/tasks/masked_language_modeling)|[Masked language modeling](docs/source/en/tasks/masked_language_modeling.md)|None|
+|[Translation](https://huggingface.co/docs/transformers/tasks/translation)|||
+|[Summarization](https://huggingface.co/docs/transformers/tasks/summarization)|||
+|[Multiple choice](https://huggingface.co/docs/transformers/tasks/multiple_choice)|||
+|[Performance and Scalability](https://huggingface.co/docs/transformers/performance)|||
+|[Quantization](https://huggingface.co/docs/transformers/quantization)|||
+|[Methods and tools for efficient training on a single GPU](https://huggingface.co/docs/transformers/perf_train_gpu_one)|||
+|[Efficient Training on Multiple GPUs](https://huggingface.co/docs/transformers/perf_train_gpu_many)|||
+|[Fully Sharded Data Parallel](https://huggingface.co/docs/transformers/fsdp)|||
+|[DeepSpeed](https://huggingface.co/docs/transformers/deepspeed)|||
+|[Hyperparameter Search using Trainer API](https://huggingface.co/docs/transformers/hpo_train)|||
+|[CPU inference](https://huggingface.co/docs/transformers/perf_infer_cpu)|||
+|[GPU inference](https://huggingface.co/docs/transformers/perf_infer_gpu_one)|||
+|[Instantiating a big model](https://huggingface.co/docs/transformers/big_models)|||
+|[Optimize inference using torch.compile()](https://huggingface.co/docs/transformers/perf_torch_compile)|||
+|[Building custom models](https://huggingface.co/docs/transformers/main/en/custom_models)|||
+|[Text generation strategies](https://huggingface.co/docs/transformers/generation_strategies)|||
 
 ## Online demos
 
