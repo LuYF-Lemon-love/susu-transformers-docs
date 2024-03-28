@@ -1,22 +1,16 @@
-<!--Copyright 2022 The HuggingFace Team. All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
-the License. You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
-an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
-
-⚠️ Note that this file is in Markdown but contain specific syntax for our doc-builder (similar to MDX) that may not be
-rendered properly in your Markdown viewer.
-
+<!--
+# docs/source/en/perf_train_gpu_one.md
+# 
+# git pull from huggingface/transformers by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Mar 22, 2024
+# updated by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Mar 28, 2024
+# 
+# 该文档介绍了在单个 GPU 上进行高效训练的方法和工具。
 -->
 
 # Methods and tools for efficient training on a single GPU
 
 This guide demonstrates practical techniques that you can use to increase the efficiency of your model's training by 
-optimizing memory utilization, speeding up the training, or both. If you'd like to understand how GPU is utilized during 
+**optimizing memory utilization**, **speeding up the training**, or **both**. If you'd like to understand how GPU is utilized during 
 training, please refer to the [Model training anatomy](model_memory_anatomy) conceptual guide first. This guide 
 focuses on practical techniques.  
 
@@ -28,39 +22,35 @@ If you have access to a machine with multiple GPUs, these approaches are still v
 
 When training large models, there are two aspects that should be considered at the same time: 
 
-* Data throughput/training time
-* Model performance
+* **Data throughput/training time**
+* **Model performance**
 
-Maximizing the throughput (samples/second) leads to lower training cost. This is generally achieved by utilizing the GPU 
-as much as possible and thus filling GPU memory to its limit. If the desired batch size exceeds the limits of the GPU memory, 
-the memory optimization techniques, such as gradient accumulation, can help.
+Maximizing the throughput (samples/second) leads to lower training cost. **This is generally achieved by utilizing the GPU as much as possible and thus filling GPU memory to its limit.** If the desired batch size exceeds the limits of the GPU memory, the memory optimization techniques, such as **gradient accumulation**, can help.
 
-However, if the preferred batch size fits into memory, there's no reason to apply memory-optimizing techniques because they can 
-slow down the training. Just because one can use a large batch size, does not necessarily mean they should. As part of 
-hyperparameter tuning, you should determine which batch size yields the best results and then optimize resources accordingly.
+**However, if the preferred batch size fits into memory, there's no reason to apply memory-optimizing techniques because they can slow down the training.** Just because one can use a large batch size, does not necessarily mean they should. **As part of hyperparameter tuning, you should determine which batch size yields the best results and then optimize resources accordingly.**
 
 The methods and tools covered in this guide can be classified based on the effect they have on the training process:
 
 | Method/tool                                                | Improves training speed | Optimizes memory utilization |
 |:-----------------------------------------------------------|:------------------------|:-----------------------------|
-| [Batch size choice](#batch-size-choice)                    | Yes                     | Yes                          |
-| [Gradient accumulation](#gradient-accumulation)            | No                      | Yes                          |
-| [Gradient checkpointing](#gradient-checkpointing)          | No                      | Yes                          |
-| [Mixed precision training](#mixed-precision-training)      | Yes                     | (No)                         |
-| [Optimizer choice](#optimizer-choice)                      | Yes                     | Yes                          |
-| [Data preloading](#data-preloading)                        | Yes                     | No                           |
-| [DeepSpeed Zero](#deepspeed-zero)                          | No                      | Yes                          |
-| [torch.compile](#using-torchcompile)                       | Yes                     | No                           |
-| [Parameter-Efficient Fine Tuning (PEFT)](#using--peft)            | No                      | Yes                          |
+| [Batch size choice](#batch-size-choice)                    | **Yes**                 | **Yes**                      |
+| [Optimizer choice](#optimizer-choice)                      | **Yes**                 | **Yes**                      |
+| [Mixed precision training](#mixed-precision-training)      | **Yes**                 | **(No)**                     |
+| [Data preloading](#data-preloading)                        | **Yes**                 | **No**                       |
+| [torch.compile](#using-torchcompile)                       | **Yes**                 | **No**                       |
+| [Gradient accumulation](#gradient-accumulation)            | **No**                  | **Yes**                      |
+| [Gradient checkpointing](#gradient-checkpointing)          | **No**                  | **Yes**                      |
+| [DeepSpeed Zero](#deepspeed-zero)                          | **No**                  | **Yes**                      |
+| [Parameter-Efficient Fine Tuning (PEFT)](#using--peft)     | **No**                  | **Yes**                      |
  
 <Tip>
 
-Note: when using mixed precision with a small model and a large batch size, there will be some memory savings but with a 
+Note: **when using mixed precision with a small model and a large batch size, there will be some memory savings** but with a 
 large model and a small batch size, the memory use will be larger.
 
 </Tip>
 
-You can combine the above methods to get a cumulative effect. These techniques are available to you whether you are 
+**You can combine the above methods to get a cumulative effect.** These techniques are available to you whether you are 
 training your model with [`Trainer`] or writing a pure PyTorch loop, in which case you can [configure these optimizations 
 with 🤗 Accelerate](#using--accelerate).
 
@@ -75,8 +65,8 @@ techniques outlined in the [multi-GPU section](perf_train_gpu_many).
 
 ## Batch size choice
 
-To achieve optimal performance, start by identifying the appropriate batch size. It is recommended to use batch sizes and 
-input/output neuron counts that are of size 2^N. Often it's a multiple of 8, but it can be 
+**To achieve optimal performance, start by identifying the appropriate batch size.** It is recommended to use batch sizes and 
+input/output neuron counts that are of size **2^N**. Often it's a multiple of 8, but it can be 
 higher depending on the hardware being used and the model's dtype.
 
 For reference, check out NVIDIA's recommendation for [input/output neuron counts](
@@ -85,21 +75,15 @@ https://docs.nvidia.com/deeplearning/performance/dl-performance-fully-connected/
 fully connected layers (which are involved in GEMMs (General Matrix Multiplications)).
 
 [Tensor Core Requirements](https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html#requirements-tc) 
-define the multiplier based on the dtype and the hardware. For instance, for fp16 data type a multiple of 8 is recommended, unless 
-it's an A100 GPU, in which case use multiples of 64.
+define the multiplier based on the dtype and the hardware. For instance, **for fp16 data type a multiple of 8 is recommended**, unless 
+**it's an A100 GPU, in which case use multiples of 64**.
 
 For parameters that are small, consider also [Dimension Quantization Effects](https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html#dim-quantization). 
 This is where tiling happens and the right multiplier can have a significant speedup.
 
 ## Gradient Accumulation
 
-The **gradient accumulation** method aims to calculate gradients in smaller increments instead of computing them for the 
-entire batch at once. This approach involves iteratively calculating gradients in smaller batches by performing forward 
-and backward passes through the model and accumulating the gradients during the process. Once a sufficient number of 
-gradients have been accumulated, the model's optimization step is executed. By employing gradient accumulation, it 
-becomes possible to increase the **effective batch size** beyond the limitations imposed by the GPU's memory capacity. 
-However, it is important to note that the additional forward and backward passes introduced by gradient accumulation can 
-slow down the training process.
+The **gradient accumulation** method aims to calculate gradients in smaller increments instead of computing them for the entire batch at once. **This approach involves iteratively calculating gradients in smaller batches by performing forward and backward passes through the model and accumulating the gradients during the process. Once a sufficient number of gradients have been accumulated, the model's optimization step is executed.** By employing gradient accumulation, it becomes possible to increase the **effective batch size** beyond the limitations imposed by the GPU's memory capacity. **However, it is important to note that the additional forward and backward passes introduced by gradient accumulation can slow down the training process.**
 
 You can enable gradient accumulation by adding the `gradient_accumulation_steps` argument to  [`TrainingArguments`]: 
 
@@ -107,17 +91,12 @@ You can enable gradient accumulation by adding the `gradient_accumulation_steps`
 training_args = TrainingArguments(per_device_train_batch_size=1, gradient_accumulation_steps=4, **default_args)
 ```
 
-In the above example, your effective batch size becomes 4. 
+**In the above example, your effective batch size becomes 4.** 
 
 Alternatively, use 🤗 Accelerate to gain full control over the training loop. Find the 🤗 Accelerate example 
 [further down in this guide](#using--accelerate).
 
-While it is advised to max out GPU usage as much as possible, a high number of gradient accumulation steps can 
-result in a more pronounced training slowdown. Consider the following example. Let's say, the `per_device_train_batch_size=4` 
-without gradient accumulation hits the GPU's limit. If you would like to train with batches of size 64, do not set the 
-`per_device_train_batch_size` to 1 and `gradient_accumulation_steps` to 64. Instead, keep `per_device_train_batch_size=4` 
-and set `gradient_accumulation_steps=16`. This results in the same effective batch size while making better use of 
-the available GPU resources.
+**While it is advised to max out GPU usage as much as possible, a high number of gradient accumulation steps can result in a more pronounced training slowdown.** Consider the following example. Let's say, the `per_device_train_batch_size=4` without gradient accumulation hits the GPU's limit. If you would like to train with batches of size 64, do not set the `per_device_train_batch_size` to 1 and `gradient_accumulation_steps` to 64. **Instead, keep `per_device_train_batch_size=4` and set `gradient_accumulation_steps=16`.** This results in the same effective batch size while making better use of the available GPU resources.
 
 For additional information, please refer to batch size and gradient accumulation benchmarks for [RTX-3090](https://github.com/huggingface/transformers/issues/14608#issuecomment-1004392537)
 and [A100](https://github.com/huggingface/transformers/issues/15026#issuecomment-1005033957).
@@ -127,13 +106,9 @@ and [A100](https://github.com/huggingface/transformers/issues/15026#issuecomment
 Some large models may still face memory issues even when the batch size is set to 1 and gradient accumulation is used. 
 This is because there are other components that also require memory storage.
 
-Saving all activations from the forward pass in order to compute the gradients during the backward pass can result in 
-significant memory overhead. The alternative approach of discarding the activations and recalculating them when needed 
-during the backward pass, would introduce a considerable computational overhead and slow down the training process.
+Saving all activations from the forward pass in order to compute the gradients during the backward pass can result in significant memory overhead. **The alternative approach of discarding the activations and recalculating them when needed during the backward pass, would introduce a considerable computational overhead and slow down the training process.**
 
-**Gradient checkpointing** offers a compromise between these two approaches and saves strategically selected activations 
-throughout the computational graph so only a fraction of the activations need to be re-computed for the gradients. For 
-an in-depth explanation of gradient checkpointing, refer to [this great article](https://medium.com/tensorflow/fitting-larger-networks-into-memory-583e3c758ff9).
+**Gradient checkpointing** offers a compromise between these two approaches and saves strategically selected activations throughout the computational graph so only a fraction of the activations need to be re-computed for the gradients. For an in-depth explanation of gradient checkpointing, refer to [this great article](https://medium.com/tensorflow/fitting-larger-networks-into-memory-583e3c758ff9).
 
 To enable gradient checkpointing in the [`Trainer`], pass the corresponding a flag to [`TrainingArguments`]:
 
@@ -147,18 +122,13 @@ Alternatively, use 🤗 Accelerate - find the 🤗 Accelerate example [further i
 
 <Tip>
 
-While gradient checkpointing may improve memory efficiency, it slows training by approximately 20%.
+**While gradient checkpointing may improve memory efficiency, it slows training by approximately 20%.**
 
 </Tip>
 
 ## Mixed precision training
 
-**Mixed precision training** is a technique that aims to optimize the computational efficiency of training models by 
-utilizing lower-precision numerical formats for certain variables. Traditionally, most models use 32-bit floating point 
-precision (fp32 or float32) to represent and process variables. However, not all variables require this high precision 
-level to achieve accurate results. By reducing the precision of certain variables to lower numerical formats like 16-bit 
-floating point (fp16 or float16), we can speed up the computations. Because in this approach some computations are performed 
-in half-precision, while some are still in full precision, the approach is called mixed precision training.
+**Mixed precision training** is a technique that aims to optimize the computational efficiency of training models by utilizing lower-precision numerical formats for certain variables. Traditionally, most models use 32-bit floating point precision (fp32 or float32) to represent and process variables. However, not all variables require this high precision level to achieve accurate results. By reducing the precision of certain variables to lower numerical formats like 16-bit floating point (fp16 or float16), we can speed up the computations. **Because in this approach some computations are performed in half-precision, while some are still in full precision, the approach is called mixed precision training.**
 
 Most commonly mixed precision training is achieved by using fp16 (float16) data types, however, some GPU architectures 
 (such as the Ampere architecture) offer bf16 and tf32 (CUDA internal data type) data types. Check 
@@ -167,10 +137,9 @@ the differences between these data types.
 
 ### fp16
 
-The main advantage of mixed precision training comes from saving the activations in half precision (fp16). 
-Although the gradients are also computed in half precision they are converted back to full precision for the optimization 
-step so no memory is saved here. 
-While mixed precision training results in faster computations, it can also lead to more GPU memory being utilized, especially for small batch sizes.
+**The main advantage of mixed precision training comes from saving the activations in half precision (fp16).** 
+Although the gradients are also computed in half precision they are converted back to full precision for the optimization step so no memory is saved here. 
+**While mixed precision training results in faster computations, it can also lead to more GPU memory being utilized, especially for small batch sizes.**
 This is because the model is now present on the GPU in both 16-bit and 32-bit precision (1.5x the original model on the GPU).
 
 To enable mixed precision training, set the `fp16` flag to `True`:
@@ -183,10 +152,7 @@ If you prefer to use 🤗 Accelerate, find the 🤗 Accelerate example [further 
 
 ### BF16
 
-If you have access to an Ampere or newer hardware you can use bf16 for mixed precision training and evaluation. While 
-bf16 has a worse precision than fp16, it has a much bigger dynamic range. In fp16 the biggest number you can have 
-is `65535` and any number above that will result in an overflow. A bf16 number can be as large as `3.39e+38` (!) which 
-is about the same as fp32 - because both have 8-bits used for the numerical range.
+If you have access to an Ampere or newer hardware you can use bf16 for mixed precision training and evaluation. **While bf16 has a worse precision than fp16, it has a much bigger dynamic range. In fp16 the biggest number you can have is `65535` and any number above that will result in an overflow.** A bf16 number can be as large as `3.39e+38` (!) which is about the same as fp32 - **because both have 8-bits used for the numerical range.**
 
 You can enable BF16 in the 🤗 Trainer with:
 
@@ -196,10 +162,7 @@ training_args = TrainingArguments(bf16=True, **default_args)
 
 ### TF32
 
-The Ampere hardware uses a magical data type called tf32. It has the same numerical range as fp32 (8-bits), but instead 
-of 23 bits precision it has only 10 bits (same as fp16) and uses only 19 bits in total. It's "magical" in the sense that 
-you can use the normal fp32 training and/or inference code and by enabling tf32 support you can get up to 3x throughput 
-improvement. All you need to do is to add the following to your code:
+The Ampere hardware uses a magical data type called tf32. **It has the same numerical range as fp32 (8-bits), but instead of 23 bits precision it has only 10 bits (same as fp16) and uses only 19 bits in total.** It's "magical" in the sense that you can use the normal fp32 training and/or inference code and by enabling tf32 support you can get up to **3x** throughput improvement. All you need to do is to add the following to your code:
 
 ```python
 import torch
@@ -207,11 +170,9 @@ torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 ```
 
-CUDA will automatically switch to using tf32 instead of fp32 where possible, assuming that the used GPU is from the Ampere series.
+**CUDA will automatically switch to using tf32 instead of fp32 where possible, assuming that the used GPU is from the Ampere series.**
 
-According to [NVIDIA research](https://developer.nvidia.com/blog/accelerating-ai-training-with-tf32-tensor-cores/), the 
-majority of machine learning training workloads show the same perplexity and convergence with tf32 training as with fp32. 
-If you're already using fp16 or bf16 mixed precision it may help with the throughput as well.
+**According to [NVIDIA research](https://developer.nvidia.com/blog/accelerating-ai-training-with-tf32-tensor-cores/), the majority of machine learning training workloads show the same perplexity and convergence with tf32 training as with fp32.** If you're already using fp16 or bf16 mixed precision it may help with the throughput as well.
 
 You can enable this mode in the 🤗 Trainer:
 
@@ -221,7 +182,7 @@ TrainingArguments(tf32=True, **default_args)
 
 <Tip>
 
-tf32 can't be accessed directly via `tensor.to(dtype=torch.tf32)` because it is an internal CUDA data type. You need `torch>=1.7` to use tf32 data types.
+**tf32 can't be accessed directly via `tensor.to(dtype=torch.tf32)` because it is an internal CUDA data type.** You need `torch>=1.7` to use tf32 data types.
 
 </Tip>
 
@@ -231,7 +192,7 @@ For additional information on tf32 vs other precisions, please refer to the foll
 
 ## Flash Attention 2
 
-You can speedup the training throughput by using Flash Attention 2 integration in transformers. Check out the appropriate section in the [single GPU section](./perf_infer_gpu_one#Flash-Attention-2) to learn more about how to load a model with Flash Attention 2 modules. 
+**You can speedup the training throughput by using Flash Attention 2 integration in transformers.** Check out the appropriate section in the [single GPU section](./perf_infer_gpu_one#Flash-Attention-2) to learn more about how to load a model with Flash Attention 2 modules. 
 
 ## Optimizer choice
 
