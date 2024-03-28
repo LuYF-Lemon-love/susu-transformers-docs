@@ -43,7 +43,7 @@
 |[Translation](https://huggingface.co/docs/transformers/tasks/translation)|||
 |[Summarization](https://huggingface.co/docs/transformers/tasks/summarization)|||
 |[Multiple choice](https://huggingface.co/docs/transformers/tasks/multiple_choice)|||
-|[Performance and Scalability](https://huggingface.co/docs/transformers/performance)|||
+|[Performance and Scalability](https://huggingface.co/docs/transformers/performance)|[Performance and Scalability](docs/source/en/performance.md)|[性能与可扩展性](docs/source/zh/performance.md)|
 |[Quantization](https://huggingface.co/docs/transformers/quantization)|||
 |[Methods and tools for efficient training on a single GPU](https://huggingface.co/docs/transformers/perf_train_gpu_one)|||
 |[Efficient Training on Multiple GPUs](https://huggingface.co/docs/transformers/perf_train_gpu_many)|||
