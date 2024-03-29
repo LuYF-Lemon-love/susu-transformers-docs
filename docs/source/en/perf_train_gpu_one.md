@@ -2,7 +2,7 @@
 # docs/source/en/perf_train_gpu_one.md
 # 
 # git pull from huggingface/transformers by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Mar 22, 2024
-# updated by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Mar 28, 2024
+# updated by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Mar 29, 2024
 # 
 # 该文档介绍了在单个 GPU 上进行高效训练的方法和工具。
 -->
@@ -35,9 +35,9 @@ The methods and tools covered in this guide can be classified based on the effec
 |:-----------------------------------------------------------|:------------------------|:-----------------------------|
 | [Batch size choice](#batch-size-choice)                    | **Yes**                 | **Yes**                      |
 | [Optimizer choice](#optimizer-choice)                      | **Yes**                 | **Yes**                      |
-| [Mixed precision training](#mixed-precision-training)      | **Yes**                 | **(No)**                     |
 | [Data preloading](#data-preloading)                        | **Yes**                 | **No**                       |
 | [torch.compile](#using-torchcompile)                       | **Yes**                 | **No**                       |
+| [Mixed precision training](#mixed-precision-training)      | **Yes**                 | **(No)**                     |
 | [Gradient accumulation](#gradient-accumulation)            | **No**                  | **Yes**                      |
 | [Gradient checkpointing](#gradient-checkpointing)          | **No**                  | **Yes**                      |
 | [DeepSpeed Zero](#deepspeed-zero)                          | **No**                  | **Yes**                      |
@@ -196,11 +196,7 @@ For additional information on tf32 vs other precisions, please refer to the foll
 
 ## Optimizer choice
 
-The most common optimizer used to train transformer models is Adam or AdamW (Adam with weight decay). Adam achieves 
-good convergence by storing the rolling average of the previous gradients; however, it adds an additional memory 
-footprint of the order of the number of model parameters. To remedy this, you can use an alternative optimizer. 
-For example if you have [NVIDIA/apex](https://github.com/NVIDIA/apex) installed for NVIDIA GPUs, or [ROCmSoftwarePlatform/apex](https://github.com/ROCmSoftwarePlatform/apex) for AMD GPUs, `adamw_apex_fused` will give you the
-fastest training experience among all supported AdamW optimizers.
+The most common optimizer used to train transformer models is **Adam** or **AdamW (Adam with weight decay)**. **Adam achieves good convergence by storing the rolling average of the previous gradients; however, it adds an additional memory footprint of the order of the number of model parameters.** To remedy this, you can use an alternative optimizer. For example if you have [NVIDIA/apex](https://github.com/NVIDIA/apex) installed for NVIDIA GPUs, or [ROCmSoftwarePlatform/apex](https://github.com/ROCmSoftwarePlatform/apex) for AMD GPUs, `adamw_apex_fused` will give you the fastest training experience among all supported AdamW optimizers.
 
 [`Trainer`] integrates a variety of optimizers that can be used out of box: `adamw_hf`, `adamw_torch`, `adamw_torch_fused`, 
 `adamw_apex_fused`, `adamw_anyprecision`, `adafactor`, or `adamw_bnb_8bit`. More optimizers can be plugged in via a third-party implementation.
@@ -210,15 +206,13 @@ Let's take a closer look at two alternatives to AdamW optimizer:
 2. `adamw_bnb_8bit` is also available in Trainer, but a third-party integration is provided below for demonstration.
 
 For comparison, for a 3B-parameter model, like “google-t5/t5-3b”: 
-* A standard AdamW optimizer will need 24GB of GPU memory because it uses 8 bytes for each parameter (8*3 => 24GB)
-* Adafactor optimizer will need more than 12GB. It uses slightly more than 4 bytes for each parameter, so 4*3 and then some extra.
-* 8bit BNB quantized optimizer will use only (2*3) 6GB if all optimizer states are quantized.
+* A standard AdamW optimizer will need **24GB** of GPU memory because it uses 8 bytes for each parameter (8*3 => 24GB)
+* Adafactor optimizer will need **more than 12GB**. It uses slightly more than 4 bytes for each parameter, so 4*3 and then some extra.
+* 8bit BNB quantized optimizer will use **only (2*3) 6GB** if all optimizer states are quantized.
 
 ### Adafactor
 
-Adafactor doesn't store rolling averages for each element in weight matrices. Instead, it keeps aggregated information 
-(sums of rolling averages row- and column-wise), significantly reducing its footprint. However, compared to Adam, 
-Adafactor may have slower convergence in certain cases.
+**Adafactor doesn't store rolling averages for each element in weight matrices.** Instead, it keeps aggregated information (sums of rolling averages row- and column-wise), significantly reducing its footprint. **However, compared to Adam, Adafactor may have slower convergence in certain cases.**
 
 You can switch to Adafactor by setting `optim="adafactor"` in [`TrainingArguments`]:
 
@@ -226,13 +220,13 @@ You can switch to Adafactor by setting `optim="adafactor"` in [`TrainingArgument
 training_args = TrainingArguments(per_device_train_batch_size=4, optim="adafactor", **default_args)
 ```
 
-Combined with other approaches (gradient accumulation, gradient checkpointing, and mixed precision training) 
-you can notice up to 3x improvement while maintaining the throughput! However, as mentioned before, the convergence of 
+Combined with other approaches (**gradient accumulation**, **gradient checkpointing**, and **mixed precision training**) 
+you can notice up to **3x** improvement while maintaining the throughput! However, as mentioned before, the convergence of 
 Adafactor can be worse than Adam. 
 
 ### 8-bit Adam
 
-Instead of aggregating optimizer states like Adafactor, 8-bit Adam keeps the full state and quantizes it. Quantization 
+**Instead of aggregating optimizer states like Adafactor, 8-bit Adam keeps the full state and quantizes it.** Quantization 
 means that it stores the state with lower precision and dequantizes it only for the optimization. This is similar to the 
 idea behind mixed precision training.
 
@@ -242,13 +236,13 @@ To use `adamw_bnb_8bit`, you simply need to set `optim="adamw_bnb_8bit"` in [`Tr
 training_args = TrainingArguments(per_device_train_batch_size=4, optim="adamw_bnb_8bit", **default_args)
 ```
 
-However, we can also use a third-party implementation of the 8-bit optimizer for demonstration purposes to see how that can be integrated.
+**However, we can also use a third-party implementation of the 8-bit optimizer for demonstration purposes to see how that can be integrated.**
 
 First, follow the installation guide in the GitHub [repo](https://github.com/TimDettmers/bitsandbytes) to install the `bitsandbytes` library 
-that implements the 8-bit Adam optimizer.
+that implements **the 8-bit Adam optimizer**.
 
 Next you need to initialize the optimizer. This involves two steps: 
-* First, group the model's parameters into two groups - one where weight decay should be applied, and the other one where it should not. Usually, biases and layer norm parameters are not weight decayed. 
+* First, group the model's parameters into two groups - **one where weight decay should be applied, and the other one where it should not**. Usually, **biases and layer norm parameters are not weight decayed**. 
 * Then do some argument housekeeping to use the same parameters as the previously used AdamW optimizer.
 
 ```py
@@ -290,13 +284,12 @@ Finally, pass the custom optimizer as an argument to the `Trainer`:
 trainer = Trainer(model=model, args=training_args, train_dataset=ds, optimizers=(adam_bnb_optim, None))
 ```
 
-Combined with other approaches (gradient accumulation, gradient checkpointing, and mixed precision training), 
-you can expect to get about a 3x memory improvement and even slightly higher throughput as using Adafactor. 
+Combined with other approaches (**gradient accumulation**, **gradient checkpointing**, and **mixed precision training**), 
+you can expect to get about **a 3x memory improvement** and even slightly higher throughput as using Adafactor. 
 
 ### multi_tensor
 
-pytorch-nightly introduced `torch.optim._multi_tensor` which should significantly speed up the optimizers for situations 
-with lots of small feature tensors. It should eventually become the default, but if you want to experiment with it sooner, take a look at this GitHub [issue](https://github.com/huggingface/transformers/issues/9965).
+**pytorch-nightly introduced `torch.optim._multi_tensor` which should significantly speed up the optimizers for situations with lots of small feature tensors.** It should eventually become the default, but if you want to experiment with it sooner, take a look at this GitHub [issue](https://github.com/huggingface/transformers/issues/9965).
 
 ## Data preloading
 
@@ -304,8 +297,8 @@ One of the important requirements to reach great training speed is the ability t
 can handle. By default, everything happens in the main process, and it might not be able to read the data from disk fast 
 enough, and thus create a bottleneck, leading to GPU under-utilization. Configure the following arguments to reduce the bottleneck:
 
-- `DataLoader(pin_memory=True, ...)` - ensures the data gets preloaded into the pinned memory on CPU and typically leads to much faster transfers from CPU to GPU memory.
-- `DataLoader(num_workers=4, ...)` - spawn several workers to preload data faster. During training, watch the GPU utilization stats; if it's far from 100%, experiment with increasing the number of workers. Of course, the problem could be elsewhere, so many workers won't necessarily lead to better performance.
+- `DataLoader(pin_memory=True, ...)` - **ensures the data gets preloaded into the pinned memory on CPU and typically leads to much faster transfers from CPU to GPU memory.**
+- `DataLoader(num_workers=4, ...)` - **spawn several workers to preload data faster.** During training, watch the GPU utilization stats; if it's far from 100%, experiment with increasing the number of workers. Of course, the problem could be elsewhere, so many workers won't necessarily lead to better performance.
 
 When using [`Trainer`], the corresponding [`TrainingArguments`] are: `dataloader_pin_memory` (`True` by default), and `dataloader_num_workers` (defaults to `0`).
 
@@ -315,11 +308,7 @@ DeepSpeed is an open-source deep learning optimization library that is integrate
 It provides a wide range of features and optimizations designed to improve the efficiency and scalability of large-scale 
 deep learning training.
 
-If your model fits onto a single GPU and you have enough space to fit a small batch size, you don't need to use DeepSpeed
-as it'll only slow things down. However, if the model doesn't fit onto a single GPU or you can't fit a small batch, you can 
-leverage DeepSpeed ZeRO + CPU Offload, or NVMe Offload for much larger models. In this case, you need to separately
-[install the library](main_classes/deepspeed#installation), then follow one of the guides to create a configuration file 
-and launch DeepSpeed: 
+If your model fits onto a single GPU and you have enough space to fit a small batch size, you don't need to use DeepSpeed as it'll only slow things down. **However, if the model doesn't fit onto a single GPU or you can't fit a small batch, you can leverage DeepSpeed ZeRO + CPU Offload, or NVMe Offload for much larger models.** In this case, you need to separately [install the library](main_classes/deepspeed#installation), then follow one of the guides to create a configuration file and launch DeepSpeed: 
  
 * For an in-depth guide on DeepSpeed integration with [`Trainer`], review [the corresponding documentation](main_classes/deepspeed), specifically the 
 [section for a single GPU](main_classes/deepspeed#deployment-with-one-gpu). Some adjustments are required to use DeepSpeed in a notebook; please take a look at the [corresponding guide](main_classes/deepspeed#deployment-in-notebooks).
@@ -364,18 +353,18 @@ For an example of using `torch.compile` with 🤗 Transformers, check out this [
 
 ## Using 🤗 PEFT
 
-[Parameter-Efficient Fine Tuning (PEFT)](https://huggingface.co/blog/peft) methods freeze the pretrained model parameters during fine-tuning and add a small number of trainable parameters (the adapters) on top of it.
+**[Parameter-Efficient Fine Tuning (PEFT)](https://huggingface.co/blog/peft) methods freeze the pretrained model parameters during fine-tuning and add a small number of trainable parameters (the adapters) on top of it.**
 
 As a result the [memory associated to the optimizer states and gradients](https://huggingface.co/docs/transformers/model_memory_anatomy#anatomy-of-models-memory) are greatly reduced.
 
 For example with a vanilla AdamW, the memory requirement for the optimizer state would be:
-* fp32 copy of parameters: 4 bytes/param
-* Momentum: 4 bytes/param
-* Variance: 4 bytes/param
+* **fp32 copy of parameters**: 4 bytes/param
+* **Momentum**: 4 bytes/param
+* **Variance**: 4 bytes/param
 
 Suppose a model with 7B parameters and 200 millions parameters injected with [Low Rank Adapters](https://huggingface.co/docs/peft/conceptual_guides/lora).
 
-The memory requirement for the optimizer state of the plain model would be 12 * 7 = 84 GB (assuming 7B trainable parameters).
+**The memory requirement for the optimizer state of the plain model would be 12 * 7 = 84 GB (assuming 7B trainable parameters).**
 
 Adding Lora increases slightly the memory associated to the model weights and substantially decreases memory requirement for the optimizer state to 12 * 0.2 = 2.4GB.
 
@@ -398,7 +387,7 @@ training_args = TrainingArguments(
 )
 ```
 
-The full example training loop with 🤗 Accelerate is only a handful of lines of code long:
+**The full example training loop with 🤗 Accelerate is only a handful of lines of code long:**
 
 ```py
 from accelerate import Accelerator
@@ -422,31 +411,20 @@ for step, batch in enumerate(dataloader, start=1):
         optimizer.zero_grad()
 ```
 
-First we wrap the dataset in a [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader). 
-Then we can enable gradient checkpointing by calling the model's [`~PreTrainedModel.gradient_checkpointing_enable`] method. 
-When we initialize the [`Accelerator`](https://huggingface.co/docs/accelerate/package_reference/accelerator#accelerate.Accelerator) 
-we can specify if we want to use mixed precision training and it will take care of it for us in the [`prepare`] call. 
-During the [`prepare`](https://huggingface.co/docs/accelerate/package_reference/accelerator#accelerate.Accelerator.prepare) 
-call the dataloader will also be distributed across workers should we use multiple GPUs. We use the same [8-bit optimizer](#8-bit-adam) from the earlier example.
+First we wrap the dataset in a [`DataLoader`](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader). Then we can enable gradient checkpointing by calling the model's [`~PreTrainedModel.gradient_checkpointing_enable`] method. When we initialize the [`Accelerator`](https://huggingface.co/docs/accelerate/package_reference/accelerator#accelerate.Accelerator) we can specify if we want to use mixed precision training and it will take care of it for us in the [`prepare`] call. **During the [`prepare`](https://huggingface.co/docs/accelerate/package_reference/accelerator#accelerate.Accelerator.prepare) call the dataloader will also be distributed across workers should we use multiple GPUs.** We use the same [8-bit optimizer](#8-bit-adam) from the earlier example.
 
-Finally, we can add the main training loop. Note that the `backward` call is handled by 🤗 Accelerate. We can also see
-how gradient accumulation works: we normalize the loss, so we get the average at the end of accumulation and once we have 
-enough steps we run the optimization. 
+Finally, we can add the main training loop. Note that the `backward` call is handled by 🤗 Accelerate. **We can also see how gradient accumulation works: we normalize the loss, so we get the average at the end of accumulation and once we have enough steps we run the optimization.**
 
 Implementing these optimization techniques with 🤗 Accelerate only takes a handful of lines of code and comes with the 
 benefit of more flexibility in the training loop. For a full documentation of all features have a look at the 
 [Accelerate documentation](https://huggingface.co/docs/accelerate/index).
-
 
 ## Efficient Software Prebuilds
 
 PyTorch's [pip and conda builds](https://pytorch.org/get-started/locally/#start-locally) come prebuilt with the cuda toolkit 
 which is enough to run PyTorch, but it is insufficient if you need to build cuda extensions.
 
-At times, additional efforts may be required to pre-build some components. For instance, if you're using libraries like `apex` that 
-don't come pre-compiled. In other situations figuring out how to install the right cuda toolkit system-wide can be complicated. 
-To address these scenarios PyTorch and NVIDIA released a new version of NGC docker container which already comes with 
-everything prebuilt. You just need to install your programs on it, and it will run out of the box.
+At times, additional efforts may be required to pre-build some components. For instance, if you're using libraries like `apex` that don't come pre-compiled. In other situations figuring out how to install the right cuda toolkit system-wide can be complicated. **To address these scenarios PyTorch and NVIDIA released a new version of NGC docker container which already comes with everything prebuilt.** You just need to install your programs on it, and it will run out of the box.
 
 This approach is also useful if you want to tweak the pytorch source and/or make a new customized build.
 To find the docker image version you want start [with PyTorch release notes](https://docs.nvidia.com/deeplearning/frameworks/pytorch-release-notes/), 
@@ -458,27 +436,21 @@ Next follow the instructions to download and deploy the docker image.
 
 ## Mixture of Experts
 
-Some recent papers reported a 4-5x training speedup and a faster inference by integrating
-Mixture of Experts (MoE) into the Transformer models.
+Some recent papers reported a 4-5x training speedup and a faster inference by integrating Mixture of Experts (MoE) into the Transformer models.
 
-Since it has been discovered that more parameters lead to better performance, this technique allows to increase the 
-number of parameters by an order of magnitude without increasing training costs.
+Since it has been discovered that more parameters lead to better performance, this technique allows to increase the number of parameters by an order of magnitude without increasing training costs.
 
-In this approach every other FFN layer is replaced with a MoE Layer which consists of many experts, with a gated function 
-that trains each expert in a balanced way depending on the input token's position in a sequence.
+**In this approach every other FFN layer is replaced with a MoE Layer which consists of many experts, with a gated function that trains each expert in a balanced way depending on the input token's position in a sequence.**
 
-![MoE Transformer 2x block](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/perf-moe-transformer.png)
+![MoE Transformer 2x block](../images/perf-moe-transformer.png)
 
 (source: [GLAM](https://ai.googleblog.com/2021/12/more-efficient-in-context-learning-with.html))
 
 You can find exhaustive details and comparison tables in the papers listed at the end of this section.
 
-The main drawback of this approach is that it requires staggering amounts of GPU memory - almost an order of magnitude 
-larger than its dense equivalent. Various distillation and approaches are proposed to how to overcome the much higher memory requirements.
+**The main drawback of this approach is that it requires staggering amounts of GPU memory - almost an order of magnitude larger than its dense equivalent. Various distillation and approaches are proposed to how to overcome the much higher memory requirements.**
 
-There is direct trade-off though, you can use just a few experts with a 2-3x smaller base model instead of dozens or 
-hundreds experts leading to a 5x smaller model and thus increase the training speed moderately while increasing the 
-memory requirements moderately as well.
+**There is direct trade-off though, you can use just a few experts with a 2-3x smaller base model instead of dozens or hundreds experts leading to a 5x smaller model and thus increase the training speed moderately while increasing the memory requirements moderately as well.**
 
 Most related papers and implementations are built around Tensorflow/TPUs:
 
@@ -490,6 +462,6 @@ And for Pytorch DeepSpeed has built one as well: [DeepSpeed-MoE: Advancing Mixtu
 
 ## Using PyTorch native attention and Flash Attention
 
-PyTorch's [`torch.nn.functional.scaled_dot_product_attention`](https://pytorch.org/docs/master/generated/torch.nn.functional.scaled_dot_product_attention.html) (SDPA) can also call FlashAttention and memory-efficient attention kernels under the hood. SDPA support is currently being added natively in Transformers and is used by default for `torch>=2.1.1` when an implementation is available. Please refer to [PyTorch scaled dot product attention](https://huggingface.co/docs/transformers/perf_infer_gpu_one#pytorch-scaled-dot-product-attention) for a list of supported models and more details.
+**PyTorch's [`torch.nn.functional.scaled_dot_product_attention`](https://pytorch.org/docs/master/generated/torch.nn.functional.scaled_dot_product_attention.html) (SDPA) can also call FlashAttention and memory-efficient attention kernels under the hood. SDPA support is currently being added natively in Transformers and is used by default for `torch>=2.1.1` when an implementation is available.** Please refer to [PyTorch scaled dot product attention](https://huggingface.co/docs/transformers/perf_infer_gpu_one#pytorch-scaled-dot-product-attention) for a list of supported models and more details.
 
 Check out this [blogpost](https://pytorch.org/blog/out-of-the-box-acceleration/) to learn more about acceleration and memory-savings with SDPA.
