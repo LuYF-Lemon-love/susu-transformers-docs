@@ -158,19 +158,15 @@ As you can see, in this case DP is ~10% slower than DDP with NVlink, but ~15% fa
 
 ## ZeRO Data Parallelism
 
-ZeRO-powered data parallelism (ZeRO-DP) is illustrated in the following diagram from this [blog post](https://www.microsoft.com/en-us/research/blog/zero-deepspeed-new-system-optimizations-enable-training-models-with-over-100-billion-parameters/).
+**ZeRO-powered data parallelism** (ZeRO-DP) is illustrated in the following diagram from this [blog post](https://www.microsoft.com/en-us/research/blog/zero-deepspeed-new-system-optimizations-enable-training-models-with-over-100-billion-parameters/).
 
 <div class="flex justify-center">
-     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/parallelism-zero.png" alt="DeepSpeed-Image-1"/>
+     <img src="../images/parallelism-zero.png" alt="DeepSpeed-Image-1"/>
  </div>
 
-While it may appear complex, it is a very similar concept to `DataParallel` (DP). The difference is that instead of 
-replicating the full model parameters, gradients and optimizer states, each GPU stores only a slice of it. Then, at 
-run-time when the full layer parameters are needed just for the given layer, all GPUs synchronize to give each other 
-parts that they miss.
+While it may appear complex, it is a very similar concept to `DataParallel` (DP). **The difference is that instead of replicating the full model parameters, gradients and optimizer states, each GPU stores only a slice of it. Then, at run-time when the full layer parameters are needed just for the given layer, all GPUs synchronize to give each other parts that they miss.**
 
-To illustrate this idea, consider a simple model with 3 layers (La, Lb, and Lc), where each layer has 3 parameters. 
-Layer La, for example, has weights a0, a1 and a2:
+To illustrate this idea, consider a simple model with **3 layers** (La, Lb, and Lc), where each layer has 3 parameters. **Layer La, for example, has weights a0, a1 and a2:**
 
 ```
 La | Lb | Lc
@@ -180,7 +176,7 @@ a1 | b1 | c1
 a2 | b2 | c2
 ```
 
-If we have 3 GPUs, ZeRO-DP splits the model onto 3 GPUs like so:
+**If we have 3 GPUs, ZeRO-DP splits the model onto 3 GPUs like so:**
 
 ```
 GPU0:
@@ -202,7 +198,7 @@ a2 | b2 | c2
 In a way, this is the same horizontal slicing as tensor parallelism, as opposed to Vertical 
 slicing, where one puts whole layer-groups on different GPUs. Now let's see how this works: 
 
-Each of these GPUs will get the usual mini-batch as it works in DP:
+**Each of these GPUs will get the usual mini-batch as it works in DP:**
 
 ```
 x0 => GPU0
@@ -214,11 +210,9 @@ The inputs are passed without modifications as if they would be processed by the
 
 First, the inputs get to the layer `La`. What happens at this point?
 
-On GPU0: the x0 mini-batch requires the a0, a1, a2 parameters to do its forward path through the layer, but the GPU0 has only a0. 
-It will get a1 from GPU1 and a2 from GPU2, bringing all the pieces of the model together.
+**On GPU0: the x0 mini-batch requires the a0, a1, a2 parameters to do its forward path through the layer, but the GPU0 has only a0. It will get a1 from GPU1 and a2 from GPU2, bringing all the pieces of the model together.**
 
-In parallel, GPU1 gets another mini-batch - x1. GPU1 has the a1 parameter, but needs a0 and a2, so it gets those from GPU0 and GPU2.
-Same happens to GPU2 that gets the mini-batch x2. It gets a0 and a1 from GPU0 and GPU1.
+**In parallel, GPU1 gets another mini-batch - x1. GPU1 has the a1 parameter, but needs a0 and a2, so it gets those from GPU0 and GPU2. Same happens to GPU2 that gets the mini-batch x2. It gets a0 and a1 from GPU0 and GPU1.**
 
 This way each of the 3 GPUs gets the full tensors reconstructed and makes a forward pass with its own mini-batch.
 As soon as the calculation is done, the data that is no longer needed gets dropped - it's only used during the calculation. 
@@ -249,13 +243,9 @@ Implementations:
 
 ## From Naive Model Parallelism to Pipeline Parallelism
 
-To explain Pipeline parallelism, we'll first look into Naive Model Parallelism (MP), also known as Vertical MP. This approach
-involves distributing groups of model layers across multiple GPUs by assigning specific layers to specific GPUs with `.to()`. 
-As data flows through these layers, it is moved to the same GPU as the layer, while the other layers remain untouched.
+**To explain Pipeline parallelism, we'll first look into Naive Model Parallelism (MP), also known as Vertical MP. This approach involves distributing groups of model layers across multiple GPUs by assigning specific layers to specific GPUs with `.to()`. As data flows through these layers, it is moved to the same GPU as the layer, while the other layers remain untouched.**
 
-We refer to this Model parallelism as "Vertical" because of how models are typically visualized. For example, the 
-following diagram shows an 8-layer model split vertically into two slices, placing layers 0-3 onto 
-GPU0 and 4-7 to GPU1:
+**We refer to this Model parallelism as "Vertical" because of how models are typically visualized.** For example, the following diagram shows an 8-layer model split vertically into two slices, placing layers 0-3 onto GPU0 and 4-7 to GPU1:
 
 ```
 ================
@@ -273,10 +263,7 @@ GPU0 and 4-7 to GPU1:
 ================
 ```
 
-In this example, when data moves from layer 0 to 3, it's no different from regular forward pass. However, passing data 
-from layer 3 to 4 requires moving it from GPU0 to GPU1, introducing a communication overhead. If the participating 
-GPUs are on the same compute node (e.g. same physical machine) this copying is fast, but if the GPUs are distributed 
-across different compute nodes (e.g. multiple machines), the communication overhead could be substantially greater.
+In this example, when data moves from layer 0 to 3, it's no different from regular forward pass. **However, passing data from layer 3 to 4 requires moving it from GPU0 to GPU1, introducing a communication overhead.** If the participating GPUs are on the same compute node (e.g. same physical machine) this copying is fast, but if the GPUs are distributed across different compute nodes (e.g. multiple machines), the communication overhead could be substantially greater.
 
 Following that, layers 4 to 7 work as they would in the original model. Upon completion of the 7th layer, there is often 
 a need to send the data back to layer 0 where the labels are (or alternatively send the labels to the last layer). Now the loss can be 
@@ -287,43 +274,24 @@ Naive Model Parallelism comes several shortcomings:
 - **Overhead in data transfer between devices**:  E.g. 4x 6GB cards will be able to accommodate the same size as 1x 24GB card using naive MP, but a single 24GB card will complete the training faster, because it doesn't have the data copying overhead. But, say, if you have 40GB cards and need to fit a 45GB model you can with 4x 40GB cards (but barely because of the gradient and optimizer states)
 - **Copying shared embeddings**: Shared embeddings may need to get copied back and forth between GPUs.
 
-Now that you are familiar with how the naive approach to model parallelism works and its shortcomings, let's look at Pipeline Parallelism (PP).
-PP is almost identical to a naive MP, but it solves the GPU idling problem by chunking the incoming batch into micro-batches 
-and artificially creating a pipeline, which allows different GPUs to concurrently participate in the computation process.
+Now that you are familiar with how the naive approach to model parallelism works and its shortcomings, let's look at Pipeline Parallelism (PP). **PP is almost identical to a naive MP, but it solves the GPU idling problem by chunking the incoming batch into micro-batches and artificially creating a pipeline, which allows different GPUs to concurrently participate in the computation process.**
 
 The following illustration from the [GPipe paper](https://ai.googleblog.com/2019/03/introducing-gpipe-open-source-library.html) 
 shows the naive MP on the top, and PP on the bottom:
 
 <div class="flex justify-center">
-     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/parallelism-gpipe-bubble.png" alt="MP vs PP"/>
+     <img src="../images/parallelism-gpipe-bubble.png" alt="MP vs PP"/>
 </div>
 
-At the bottom of the diagram, you can observe that the Pipeline Parallelism (PP) approach minimizes the number of idle 
-GPU zones, referred to as 'bubbles'. Both parts of the diagram show a parallelism level of degree 4, meaning that 4 GPUs 
-are involved in the pipeline. You can see that there's a forward path of 4 pipe stages (F0, F1, F2 and F3) followed by 
-a backward path in reverse order (B3, B2, B1, and B0).
+At the bottom of the diagram, you can observe that the Pipeline Parallelism (PP) approach minimizes the number of idle GPU zones, referred to as 'bubbles'. Both parts of the diagram show a parallelism level of degree 4, meaning that 4 GPUs are involved in the pipeline. **You can see that there's a forward path of 4 pipe stages (F0, F1, F2 and F3) followed by a backward path in reverse order (B3, B2, B1, and B0).**
 
-PP introduces a new hyperparameter to tune - `chunks`, which determines how many data chunks are sent in a sequence 
-through the same pipe stage. For example, in the bottom diagram you can see `chunks=4`. GPU0 performs the same 
-forward path on chunk 0, 1, 2 and 3 (F0,0, F0,1, F0,2, F0,3) and then it waits for other GPUs to do complete their work. 
-Only when the other GPUs begin to complete their work, GPU0 starts to work again doing the backward path for chunks 
-3, 2, 1 and 0 (B0,3, B0,2, B0,1, B0,0).
+**PP introduces a new hyperparameter to tune - `chunks`, which determines how many data chunks are sent in a sequence through the same pipe stage.** For example, in the bottom diagram you can see `chunks=4`. GPU0 performs the same forward path on chunk 0, 1, 2 and 3 (F0,0, F0,1, F0,2, F0,3) and then it waits for other GPUs to do complete their work. Only when the other GPUs begin to complete their work, GPU0 starts to work again doing the backward path for chunks 3, 2, 1 and 0 (B0,3, B0,2, B0,1, B0,0).
 
-Note that this is the same concept as gradient accumulation steps. PyTorch uses `chunks`, while DeepSpeed refers 
-to the same hyperparameter as gradient accumulation steps.
+Note that this is the same concept as gradient accumulation steps. **PyTorch uses `chunks`, while DeepSpeed refers to the same hyperparameter as gradient accumulation steps.**
 
-Because of the chunks, PP introduces the notion of micro-batches (MBS). DP splits the global data batch size into 
-mini-batches, so if you have a DP degree of 4, a global batch size of 1024 gets split up into 4 mini-batches of 
-256 each (1024/4). And if the number of `chunks` (or GAS) is 32 we end up with a micro-batch size of 8 (256/32). Each 
-Pipeline stage works with a single micro-batch at a time. To calculate the global batch size of the DP + PP setup, 
-use the formula: `mbs * chunks * dp_degree` (`8 * 32 * 4 = 1024`).
-With `chunks=1` you end up with the naive MP, which is inefficient. With a large `chunks` value you end up with 
-tiny micro-batch sizes which is also inefficient. For this reason, we encourage to experiment with the `chunks` value to 
-find the one that leads to the most efficient GPUs utilization.
+Because of the chunks, **PP introduces the notion of micro-batches (MBS)**. **DP splits the global data batch size into mini-batches, so if you have a DP degree of 4, a global batch size of 1024 gets split up into 4 mini-batches of 256 each (1024/4). And if the number of `chunks` (or GAS) is 32 we end up with a micro-batch size of 8 (256/32). Each Pipeline stage works with a single micro-batch at a time. To calculate the global batch size of the DP + PP setup, use the formula: `mbs * chunks * dp_degree` (`8 * 32 * 4 = 1024`).** With `chunks=1` you end up with the naive MP, which is inefficient. With a large `chunks` value you end up with tiny micro-batch sizes which is also inefficient. For this reason, we encourage to experiment with the `chunks` value to find the one that leads to the most efficient GPUs utilization.
 
-You may notice a bubble of "dead" time on the diagram that can't be parallelized because the last `forward` stage 
-has to wait for `backward` to complete the pipeline. The purpose of finding the best value for `chunks` is to enable a high 
-concurrent GPU utilization across all participating GPUs which translates to minimizing the size of the bubble.
+You may notice a bubble of "dead" time on the diagram that can't be parallelized because the last `forward` stage has to wait for `backward` to complete the pipeline. **The purpose of finding the best value for `chunks` is to enable a high concurrent GPU utilization across all participating GPUs which translates to minimizing the size of the bubble.**
 
 Pipeline API solutions have been implemented in:
 - PyTorch
@@ -331,10 +299,10 @@ Pipeline API solutions have been implemented in:
 - Megatron-LM
 
 These come with some shortcomings:
-- They have to modify the model quite heavily, because Pipeline requires one to rewrite the normal flow of modules into a `nn.Sequential` sequence of the same, which may require changes to the design of the model.
-- Currently the Pipeline API is very restricted. If you had a bunch of Python variables being passed in the very first stage of the Pipeline, you will have to find a way around it. Currently, the pipeline interface requires either a single Tensor or a tuple of Tensors as the only input and output. These tensors must have a batch size as the very first dimension, since pipeline is going to chunk the mini batch into micro-batches. Possible improvements are being discussed here https://github.com/pytorch/pytorch/pull/50693
-- Conditional control flow at the level of pipe stages is not possible - e.g., Encoder-Decoder models like T5 require special workarounds to handle a conditional encoder stage.
-- They have to arrange each layer so that the output of one layer becomes an input to the other layer.
+- **They have to modify the model quite heavily, because Pipeline requires one to rewrite the normal flow of modules into a `nn.Sequential` sequence of the same, which may require changes to the design of the model.**
+- Currently the Pipeline API is very restricted. If you had a bunch of Python variables being passed in the very first stage of the Pipeline, you will have to find a way around it. **Currently, the pipeline interface requires either a single Tensor or a tuple of Tensors as the only input and output.** These tensors must have a batch size as the very first dimension, since pipeline is going to chunk the mini batch into micro-batches. Possible improvements are being discussed here https://github.com/pytorch/pytorch/pull/50693
+- **Conditional control flow at the level of pipe stages is not possible** - e.g., Encoder-Decoder models like T5 require special workarounds to handle a conditional encoder stage.
+- **They have to arrange each layer so that the output of one layer becomes an input to the other layer.**
 
 More recent solutions include:
 - Varuna
@@ -362,7 +330,7 @@ Other approaches:
 DeepSpeed, Varuna and SageMaker use the concept of an [Interleaved Pipeline](https://docs.aws.amazon.com/sagemaker/latest/dg/model-parallel-core-features.html)
 
 <div class="flex justify-center">
-     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/parallelism-sagemaker-interleaved-pipeline.png" alt="Interleaved pipeline execution"/>
+     <img src="../images/parallelism-sagemaker-interleaved-pipeline.png" alt="Interleaved pipeline execution"/>
 </div>
 
 Here the bubble (idle time) is further minimized by prioritizing backward passes. Varuna further attempts to improve the 
@@ -372,7 +340,7 @@ OSLO has pipeline parallelism implementation based on the Transformers without `
 
 ## Tensor Parallelism
 
-In Tensor Parallelism, each GPU processes a slice of a tensor and only aggregates the full tensor for operations requiring it.
+**In Tensor Parallelism, each GPU processes a slice of a tensor and only aggregates the full tensor for operations requiring it.**
 To describe this method, this section of the guide relies on the concepts and diagrams from the [Megatron-LM](https://github.com/NVIDIA/Megatron-LM) 
 paper: [Efficient Large-Scale Language Model Training on GPU Clusters](https://arxiv.org/abs/2104.04473).
 
@@ -383,40 +351,35 @@ an input vector, `Y` is the output vector, and `A` is the weight matrix.
 If we look at the computation in matrix form, you can see how the matrix multiplication can be split between multiple GPUs:
 
 <div class="flex justify-center">
-     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/parallelism-tp-parallel_gemm.png" alt="Parallel GEMM"/>
+     <img src="../images/parallelism-tp-parallel_gemm.png" alt="Parallel GEMM"/>
 </div>
 
 If we split the weight matrix `A` column-wise across `N` GPUs and perform matrix multiplications `XA_1` through `XA_n` in parallel, 
 then we will end up with `N` output vectors `Y_1, Y_2, ..., Y_n` which can be fed into `GeLU` independently:
 
 <div class="flex justify-center">
-     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/parallelism-tp-independent-gelu.png" alt="Independent GeLU"/>
+     <img src="../images/parallelism-tp-independent-gelu.png" alt="Independent GeLU"/>
 </div>
 
-Using this principle, we can update a multi-layer perceptron of arbitrary depth, without the need for any synchronization 
-between GPUs until the very end, where we need to reconstruct the output vector from shards. The Megatron-LM paper authors 
-provide a helpful illustration for that:
+**Using this principle, we can update a multi-layer perceptron of arbitrary depth, without the need for any synchronization between GPUs until the very end, where we need to reconstruct the output vector from shards.** The Megatron-LM paper authors provide a helpful illustration for that:
 
 <div class="flex justify-center">
-     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/parallelism-tp-parallel_shard_processing.png" alt="Parallel shard processing"/>
+     <img src="../images/parallelism-tp-parallel_shard_processing.png" alt="Parallel shard processing"/>
 </div>
 
-Parallelizing the multi-headed attention layers is even simpler, since they are already inherently parallel, due to having 
-multiple independent heads!
+**Parallelizing the multi-headed attention layers is even simpler, since they are already inherently parallel, due to having multiple independent heads!**
 
 <div class="flex justify-center">
-     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/parallelism-tp-parallel_self_attention.png" alt="Parallel self-attention"/>
+     <img src="../images/parallelism-tp-parallel_self_attention.png" alt="Parallel self-attention"/>
 </div>
 
-Special considerations: TP requires very fast network, and therefore it's not advisable to do TP across more than one node. 
-Practically, if a node has 4 GPUs, the highest TP degree is therefore 4. If you need a TP degree of 8, you need to use
-nodes that have at least 8 GPUs.
+**Special considerations: TP requires very fast network, and therefore it's not advisable to do TP across more than one node.** Practically, if a node has 4 GPUs, the highest TP degree is therefore 4. If you need a TP degree of 8, you need to use nodes that have at least 8 GPUs.
 
 This section is based on the original much more [detailed TP overview](https://github.com/huggingface/transformers/issues/10321#issuecomment-783543530).
 by [@anton-l](https://github.com/anton-l).
 
 Alternative names:
-- DeepSpeed calls it [tensor slicing](https://www.deepspeed.ai/training/#model-parallelism)
+- **DeepSpeed calls it [tensor slicing](https://www.deepspeed.ai/training/#model-parallelism)**
 
 Implementations:
 - [Megatron-LM](https://github.com/NVIDIA/Megatron-LM) has an internal implementation, as it's very model-specific
@@ -431,7 +394,7 @@ SageMaker combines TP with DP for a more efficient processing.
 - but if you want inference [parallelformers](https://github.com/tunib-ai/parallelformers) provides this support for most of our models. So until this is implemented in the core you can use theirs. And hopefully training mode will be supported too.
 - Deepspeed-Inference also supports our BERT, GPT-2, and GPT-Neo models in their super-fast CUDA-kernel-based inference mode, see more [here](https://www.deepspeed.ai/tutorials/inference-tutorial/)
 
-🤗 Accelerate integrates with [TP from Megatron-LM](https://huggingface.co/docs/accelerate/v0.23.0/en/usage_guides/megatron_lm).
+**🤗 Accelerate integrates with [TP from Megatron-LM](https://huggingface.co/docs/accelerate/v0.23.0/en/usage_guides/megatron_lm).**
 
 ## Data Parallelism + Pipeline Parallelism
 
@@ -439,12 +402,10 @@ The following diagram from the DeepSpeed [pipeline tutorial](https://www.deepspe
 how one can combine DP with PP.
 
 <div class="flex justify-center">
-     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/parallelism-zero-dp-pp.png" alt="DP + PP-2d"/>
+     <img src="../images/parallelism-zero-dp-pp.png" alt="DP + PP-2d"/>
 </div>
 
-Here it's important to see how DP rank 0 doesn't see GPU2 and DP rank 1 doesn't see GPU3. To DP there is just GPUs 0 
-and 1 where it feeds data as if there were just 2 GPUs. GPU0 "secretly" offloads some of its load to GPU2 using PP. 
-And GPU1 does the same by enlisting GPU3 to its aid.
+**Here it's important to see how DP rank 0 doesn't see GPU2 and DP rank 1 doesn't see GPU3.** To DP there is just GPUs 0 and 1 where it feeds data as if there were just 2 GPUs. GPU0 "secretly" offloads some of its load to GPU2 using PP. And GPU1 does the same by enlisting GPU3 to its aid.
 
 Since each dimension requires at least 2 GPUs, here you'd need at least 4 GPUs.
 
@@ -459,15 +420,15 @@ Implementations:
 
 ## Data Parallelism + Pipeline Parallelism + Tensor Parallelism
 
-To get an even more efficient training a 3D parallelism is used where PP is combined with TP and DP. This can be seen in the following diagram.
+**To get an even more efficient training a 3D parallelism is used where PP is combined with TP and DP.** This can be seen in the following diagram.
 
 <div class="flex justify-center">
-     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/parallelism-deepspeed-3d.png" alt="dp-pp-tp-3d"/>
+     <img src="../images/parallelism-deepspeed-3d.png" alt="dp-pp-tp-3d"/>
 </div>
 
 This diagram is from a blog post [3D parallelism: Scaling to trillion-parameter models](https://www.microsoft.com/en-us/research/blog/deepspeed-extreme-scale-model-training-for-everyone/), which is a good read as well.
 
-Since each dimension requires at least 2 GPUs, here you'd need at least 8 GPUs.
+**Since each dimension requires at least 2 GPUs, here you'd need at least 8 GPUs.**
 
 Implementations:
 - [DeepSpeed](https://github.com/microsoft/DeepSpeed) - DeepSpeed also includes an even more efficient DP, which they call ZeRO-DP.
@@ -480,24 +441,17 @@ Implementations:
 
 ## ZeRO Data Parallelism + Pipeline Parallelism + Tensor Parallelism
 
-One of the main features of DeepSpeed is ZeRO, which is a super-scalable extension of DP. It has already been 
-discussed in [ZeRO Data Parallelism](#zero-data-parallelism). Normally it's a standalone feature that doesn't require PP or TP. 
-But it can be combined with PP and TP.
+**One of the main features of DeepSpeed is ZeRO, which is a super-scalable extension of DP.** It has already been discussed in [ZeRO Data Parallelism](#zero-data-parallelism). **Normally it's a standalone feature that doesn't require PP or TP.** But it can be combined with PP and TP.
 
-When ZeRO-DP is combined with PP (and optionally TP) it typically enables only ZeRO stage 1 (optimizer sharding).
+**When ZeRO-DP is combined with PP (and optionally TP) it typically enables only ZeRO stage 1 (optimizer sharding).**
 
-While it's theoretically possible to use ZeRO stage 2 (gradient sharding) with Pipeline Parallelism, it will have negative 
-performance impacts. There would need to be an additional reduce-scatter collective for every micro-batch to aggregate 
-the gradients before sharding, which adds a potentially significant communication overhead. By nature of Pipeline Parallelism, 
-small micro-batches are used and instead the focus is on trying to balance arithmetic intensity (micro-batch size) with
-minimizing the Pipeline bubble (number of micro-batches). Therefore those communication costs are going to impact the performance.
+**While it's theoretically possible to use ZeRO stage 2 (gradient sharding) with Pipeline Parallelism, it will have negative performance impacts.** There would need to be an additional reduce-scatter collective for every micro-batch to aggregate the gradients before sharding, which adds a potentially significant communication overhead. By nature of Pipeline Parallelism, small micro-batches are used and instead the focus is on trying to balance arithmetic intensity (micro-batch size) with minimizing the Pipeline bubble (number of micro-batches). Therefore those communication costs are going to impact the performance.
 
-In addition, there are already fewer layers than normal due to PP and so the memory savings won't be huge. PP already 
-reduces gradient size by ``1/PP``, and so gradient sharding savings on top of that are less significant than pure DP.
+**In addition, there are already fewer layers than normal due to PP and so the memory savings won't be huge. PP already reduces gradient size by ``1/PP``, and so gradient sharding savings on top of that are less significant than pure DP.**
 
-ZeRO stage 3 is not a good choice either for the same reason - more inter-node communications required.
+**ZeRO stage 3 is not a good choice either for the same reason - more inter-node communications required.**
 
-And since we have ZeRO, the other benefit is ZeRO-Offload. Since this is stage 1 optimizer states can be offloaded to CPU.
+**And since we have ZeRO, the other benefit is ZeRO-Offload. Since this is stage 1 optimizer states can be offloaded to CPU.**
 
 Implementations:
 - [Megatron-DeepSpeed](https://github.com/microsoft/Megatron-DeepSpeed) and [Megatron-Deepspeed from BigScience](https://github.com/bigscience-workshop/Megatron-DeepSpeed), which is the fork of the former repo.
@@ -518,37 +472,35 @@ Paper: ["Beyond Data and Model Parallelism for Deep Neural Networks" by Zhihao J
 
 It performs a sort of 4D Parallelism over Sample-Operator-Attribute-Parameter.
 
-1. Sample = Data Parallelism (sample-wise parallel)
-2. Operator = Parallelize a single operation into several sub-operations
-3. Attribute = Data Parallelism (length-wise parallel)
-4. Parameter = Model Parallelism (regardless of dimension - horizontal or vertical)
+1. **Sample = Data Parallelism (sample-wise parallel)**
+2. **Operator = Parallelize a single operation into several sub-operations**
+3. **Attribute = Data Parallelism (length-wise parallel)**
+4. **Parameter = Model Parallelism (regardless of dimension - horizontal or vertical)**
 
 Examples:
 * Sample
 
-Let's take 10 batches of sequence length 512. If we parallelize them by sample dimension into 2 devices, we get 10 x 512 which becomes be 5 x 2 x 512.
+Let's take 10 batches of sequence length 512. **If we parallelize them by sample dimension into 2 devices, we get 10 x 512 which becomes be 5 x 2 x 512.**
 
 * Operator
 
-If we perform layer normalization, we compute std first and mean second, and then we can normalize data. 
+**If we perform layer normalization, we compute std first and mean second, and then we can normalize data.** 
 Operator parallelism allows computing std and mean in parallel. So if we parallelize them by operator dimension into 2 
 devices (cuda:0, cuda:1), first we copy input data into both devices, and cuda:0 computes std, cuda:1 computes mean at the same time.
 
 * Attribute
 
-We have 10 batches of 512 length. If we parallelize them by attribute dimension into 2 devices, 10 x 512 will be 10 x 2 x 256.
+**We have 10 batches of 512 length. If we parallelize them by attribute dimension into 2 devices, 10 x 512 will be 10 x 2 x 256.**
 
 * Parameter
 
 It is similar with tensor model parallelism or naive layer-wise model parallelism.
 
 <div class="flex justify-center">
-     <img src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/parallelism-flexflow.jpeg" alt="flex-flow-soap"/>
+     <img src="../images/parallelism-flexflow.jpeg" alt="flex-flow-soap"/>
 </div>
 
-The significance of this framework is that it takes resources like (1) GPU/TPU/CPU vs. (2) RAM/DRAM vs. (3) 
-fast-intra-connect/slow-inter-connect and it automatically optimizes all these algorithmically deciding which 
-parallelisation to use where.
+**The significance of this framework is that it takes resources like (1) GPU/TPU/CPU vs. (2) RAM/DRAM vs. (3) fast-intra-connect/slow-inter-connect and it automatically optimizes all these algorithmically deciding which parallelisation to use where.**
 
 One very important aspect is that FlexFlow is designed for optimizing DNN parallelizations for models with static and 
 fixed workloads, since models with dynamic behavior may prefer different parallelization strategies across iterations.
@@ -566,7 +518,7 @@ When training on multiple GPUs, you can specify the number of GPUs to use and in
 
 ### Number of GPUs
 
-For example, if you have 4 GPUs and you only want to use the first 2:
+**For example, if you have 4 GPUs and you only want to use the first 2:**
 
 <hfoptions id="select-gpu">
 <hfoption id="torchrun">
@@ -600,19 +552,19 @@ deepspeed --num_gpus 2 trainer-program.py ...
 
 ### Order of GPUs
 
-Now, to select which GPUs to use and their order, you'll use the `CUDA_VISIBLE_DEVICES` environment variable. It is easiest to set the environment variable in a `~/bashrc` or another startup config file. `CUDA_VISIBLE_DEVICES` is used to map which GPUs are used. For example, if you have 4 GPUs (0, 1, 2, 3) and you only want to run GPUs 0 and 2:
+Now, to select which GPUs to use and their order, you'll use the `CUDA_VISIBLE_DEVICES` environment variable. It is easiest to set the environment variable in a `~/bashrc` or another startup config file. `CUDA_VISIBLE_DEVICES` is used to map which GPUs are used. **For example, if you have 4 GPUs (0, 1, 2, 3) and you only want to run GPUs 0 and 2:**
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,2 torchrun trainer-program.py ...
 ```
 
-Only the 2 physical GPUs (0 and 2) are "visible" to PyTorch and these are mapped to `cuda:0` and `cuda:1` respectively. You can also reverse the order of the GPUs to use 2 first. Now, the mapping is `cuda:1` for GPU 0 and `cuda:0` for GPU 2.
+Only the 2 physical GPUs (0 and 2) are "visible" to PyTorch and these are mapped to `cuda:0` and `cuda:1` respectively. **You can also reverse the order of the GPUs to use 2 first. Now, the mapping is `cuda:1` for GPU 0 and `cuda:0` for GPU 2.**
 
 ```bash
 CUDA_VISIBLE_DEVICES=2,0 torchrun trainer-program.py ...
 ```
 
-You can also set the `CUDA_VISIBLE_DEVICES` environment variable to an empty value to create an environment without GPUs.
+**You can also set the `CUDA_VISIBLE_DEVICES` environment variable to an empty value to create an environment without GPUs.**
 
 ```bash
 CUDA_VISIBLE_DEVICES= python trainer-program.py ...
@@ -626,16 +578,16 @@ As with any environment variable, they can be exported instead of being added to
 
 `CUDA_DEVICE_ORDER` is an alternative environment variable you can use to control how the GPUs are ordered. You can either order them by:
 
-1. PCIe bus ID's that matches the order of [`nvidia-smi`](https://developer.nvidia.com/nvidia-system-management-interface) and [`rocm-smi`](https://rocm.docs.amd.com/projects/rocm_smi_lib/en/latest/.doxygen/docBin/html/index.html) for NVIDIA and AMD GPUs respectively
+1. **PCIe bus ID's that matches the order of [`nvidia-smi`](https://developer.nvidia.com/nvidia-system-management-interface) and [`rocm-smi`](https://rocm.docs.amd.com/projects/rocm_smi_lib/en/latest/.doxygen/docBin/html/index.html) for NVIDIA and AMD GPUs respectively**
 
 ```bash
 export CUDA_DEVICE_ORDER=PCI_BUS_ID
 ```
 
-2. GPU compute ability
+2. **GPU compute ability**
 
 ```bash
 export CUDA_DEVICE_ORDER=FASTEST_FIRST
 ```
 
-The `CUDA_DEVICE_ORDER` is especially useful if your training setup consists of an older and newer GPU, where the older GPU appears first, but you cannot physically swap the cards to make the newer GPU appear first. In this case, set `CUDA_DEVICE_ORDER=FASTEST_FIRST` to always use the newer and faster GPU first (`nvidia-smi` or `rocm-smi` still reports the GPUs in their PCIe order). Or you could also set `export CUDA_VISIBLE_DEVICES=1,0`.
+The `CUDA_DEVICE_ORDER` is especially useful if your training setup consists of an older and newer GPU, where the older GPU appears first, but you cannot physically swap the cards to make the newer GPU appear first. **In this case, set `CUDA_DEVICE_ORDER=FASTEST_FIRST` to always use the newer and faster GPU first (`nvidia-smi` or `rocm-smi` still reports the GPUs in their PCIe order).** Or you could also set `export CUDA_VISIBLE_DEVICES=1,0`.
