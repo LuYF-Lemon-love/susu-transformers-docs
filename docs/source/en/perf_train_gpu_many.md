@@ -1,30 +1,15 @@
-<!--Copyright 2022 The HuggingFace Team. All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
-the License. You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
-an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
-
-⚠️ Note that this file is in Markdown but contain specific syntax for our doc-builder (similar to MDX) that may not be
-rendered properly in your Markdown viewer.
-
+<!--
+# docs/source/en/perf_train_gpu_many.md
+# 
+# git pull from huggingface/transformers by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Mar 22, 2024
+# updated by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Apr 1, 2024
+# 
+# 该文档介绍了如何在多个 GPU 上进行高效训练。
 -->
 
 # Efficient Training on Multiple GPUs
 
-If training a model on a single GPU is too slow or if the model's weights do not fit in a single GPU's memory, transitioning 
-to a multi-GPU setup may be a viable option. Prior to making this transition, thoroughly explore all the strategies covered 
-in the [Methods and tools for efficient training on a single GPU](perf_train_gpu_one) as they are universally applicable 
-to model training on any number of GPUs. Once you have employed those strategies and found them insufficient for your 
-case on a single GPU, consider moving to multiple GPUs.
-
-Transitioning from a single GPU to multiple GPUs requires the introduction of some form of parallelism, as the workload 
-must be distributed across the resources. Multiple techniques can be employed to achieve parallelism, such as data 
-parallelism, tensor parallelism, and pipeline parallelism. It's important to note that there isn't a one-size-fits-all 
-solution, and the optimal settings depend on the specific hardware configuration you are using. 
+Transitioning from a single GPU to multiple GPUs requires the introduction of some form of parallelism, as the workload must be distributed across the resources. Multiple techniques can be employed to achieve parallelism, such as **data parallelism**, **tensor parallelism**, and **pipeline parallelism**. It's important to note that there isn't a one-size-fits-all solution, and the optimal settings depend on the specific hardware configuration you are using. 
 
 This guide offers an in-depth overview of individual types of parallelism, as well as guidance on ways to combine   
 techniques and choosing an appropriate approach. For step-by-step tutorials on distributed training, please refer to
@@ -42,9 +27,7 @@ large models on a large infrastructure.
 
 ## Scalability strategy
 
-Begin by estimating how much vRAM is required to train your model. For models hosted on the 🤗 Hub, use our 
-[Model Memory Calculator](https://huggingface.co/spaces/hf-accelerate/model-memory-usage), which gives you 
-accurate calculations within a few percent margin.  
+Begin by estimating how much vRAM is required to train your model. **For models hosted on the 🤗 Hub, use our [Model Memory Calculator](https://huggingface.co/spaces/hf-accelerate/model-memory-usage), which gives you accurate calculations within a few percent margin.**  
 
 **Parallelization strategy for a single Node / multi-GPU setup**
 
@@ -55,48 +38,42 @@ impact performance. Here's a breakdown of your options:
 
 If your model can comfortably fit onto a single GPU, you have two primary options:
 
-1. DDP - Distributed DataParallel
-2. ZeRO - depending on the situation and configuration used, this method may or may not be faster, however, it's worth experimenting with it.
+1. **DDP - Distributed DataParallel**
+2. **ZeRO** - depending on the situation and configuration used, this method may or may not be faster, however, it's worth experimenting with it.
 
 **Case 2: Your model doesn't fit onto a single GPU:**
 
 If your model is too large for a single GPU, you have several alternatives to consider:
 
-1. PipelineParallel (PP)
-2. ZeRO
-3. TensorParallel (TP)
+1. **PipelineParallel (PP)**
+2. **ZeRO**
+3. **TensorParallel (TP)**
 
-With very fast inter-node connectivity (e.g., NVLINK or NVSwitch) all three strategies (PP, ZeRO, TP) should result in 
-similar performance. However, without these, PP will be faster than TP or ZeRO. The degree of TP may also 
-make a difference. It's best to experiment with your specific setup to determine the most suitable strategy.
+**With very fast inter-node connectivity (e.g., NVLINK or NVSwitch) all three strategies (PP, ZeRO, TP) should result in similar performance.** However, without these, PP will be faster than TP or ZeRO. The degree of TP may also make a difference. It's best to experiment with your specific setup to determine the most suitable strategy.
 
 TP is almost always used within a single node. That is TP size <= GPUs per node.
 
 **Case 3: Largest layer of your model does not fit onto a single GPU**
 
-1. If you are not using ZeRO, you have to use TensorParallel (TP), because PipelineParallel (PP) alone won't be sufficient to accommodate the large layer.
+1. **If you are not using ZeRO, you have to use TensorParallel (TP), because PipelineParallel (PP) alone won't be sufficient to accommodate the large layer.**
 2. If you are using ZeRO, additionally adopt techniques from the [Methods and tools for efficient training on a single GPU](perf_train_gpu_one).
 
 **Parallelization strategy for a multi-Node / multi-GPU setup**
 
 * When you have fast inter-node connectivity (e.g., NVLINK or NVSwitch) consider using one of these options:
 
-    1. ZeRO - as it requires close to no modifications to the model
-    2. A combination of PipelineParallel(PP) with TensorParallel(TP) and DataParallel(DP) - this approach will result in fewer communications, but requires significant changes to the model
+    1. **ZeRO - as it requires close to no modifications to the model**
+    2. **A combination of PipelineParallel(PP) with TensorParallel(TP) and DataParallel(DP) - this approach will result in fewer communications, but requires significant changes to the model**
 
 * When you have slow inter-node connectivity and still low on GPU memory:
 
-    1. Employ a combination of DataParallel(DP) with PipelineParallel(PP), TensorParallel(TP), and ZeRO.
+    1. **Employ a combination of DataParallel(DP) with PipelineParallel(PP), TensorParallel(TP), and ZeRO.**
 
 In the following sections of this guide we dig deeper into how these different parallelism methods work.
 
 ## Data Parallelism
 
-Even with only 2 GPUs, you can readily leverage the accelerated training capabilities offered by PyTorch's built-in features, 
-such as `DataParallel` (DP) and `DistributedDataParallel` (DDP). Note that 
-[PyTorch documentation](https://pytorch.org/docs/master/generated/torch.nn.DataParallel.html) recommends to prefer 
-`DistributedDataParallel` (DDP) over `DataParallel` (DP) for multi-GPU training as it works for all models.
-Let's take a look at how these two methods work and what makes them different.
+Even with only 2 GPUs, you can readily leverage the accelerated training capabilities offered by PyTorch's built-in features, such as `DataParallel` (DP) and `DistributedDataParallel` (DDP). **Note that [PyTorch documentation](https://pytorch.org/docs/master/generated/torch.nn.DataParallel.html) recommends to prefer `DistributedDataParallel` (DDP) over `DataParallel` (DP) for multi-GPU training as it works for all models.** Let's take a look at how these two methods work and what makes them different.
 
 ### DataParallel vs DistributedDataParallel
 
@@ -104,26 +81,24 @@ To understand the key differences in inter-GPU communication overhead between th
 
 [DDP](https://pytorch.org/docs/master/notes/ddp.html):
 
-- At the start time the main process replicates the model once from GPU 0 to the rest of GPUs
+- **At the start time the main process replicates the model once from GPU 0 to the rest of GPUs**
 - Then for each batch:
-   1. Each GPU directly consumes its mini-batch of data.
-   2. During `backward`, once the local gradients are ready, they are averaged across all processes.
+   1. **Each GPU directly consumes its mini-batch of data.**
+   2. **During `backward`, once the local gradients are ready, they are averaged across all processes.**
 
 [DP](https://pytorch.org/docs/master/generated/torch.nn.DataParallel.html):
 
 For each batch:
-   1. GPU 0 reads the batch of data and then sends a mini-batch to each GPU.
-   2. The up-to-date model is replicated from GPU 0 to each GPU. 
-   3. `forward` is executed, and output from each GPU is sent to GPU 0 to compute the loss.
-   4. The loss is distributed from GPU 0 to all GPUs, and `backward` is run. 
-   5. Gradients from each GPU are sent to GPU 0 and averaged. 
+   1. **GPU 0 reads the batch of data and then sends a mini-batch to each GPU.**
+   2. **The up-to-date model is replicated from GPU 0 to each GPU.** 
+   3. **`forward` is executed, and output from each GPU is sent to GPU 0 to compute the loss.**
+   4. **The loss is distributed from GPU 0 to all GPUs, and `backward` is run.**
+   5. **Gradients from each GPU are sent to GPU 0 and averaged.** 
 
 Key differences include:
-1. DDP performs only a single communication per batch - sending gradients, while DP performs five different data exchanges per batch.
-DDP copies data using [torch.distributed](https://pytorch.org/docs/master/distributed.html), while DP copies data within 
-the process via Python threads (which introduces limitations associated with GIL). As a result, **`DistributedDataParallel` (DDP) is generally faster than `DataParallel` (DP)** unless you have slow GPU card inter-connectivity.
-2. Under DP, GPU 0 performs significantly more work than other GPUs, resulting in GPU under-utilization. 
-3. DDP supports distributed training across multiple machines, whereas DP does not.
+1. **DDP performs only a single communication per batch - sending gradients, while DP performs five different data exchanges per batch. DDP copies data using [torch.distributed](https://pytorch.org/docs/master/distributed.html), while DP copies data within the process via Python threads (which introduces limitations associated with GIL).** As a result, **`DistributedDataParallel` (DDP) is generally faster than `DataParallel` (DP)** unless you have slow GPU card inter-connectivity.
+2. **Under DP, GPU 0 performs significantly more work than other GPUs, resulting in GPU under-utilization.** 
+3. **DDP supports distributed training across multiple machines, whereas DP does not.**
 
 This is not an exhaustive list of differences between DP and DDP, however, other nuances are out of scope of this guide.
 You can get a deeper understanding of these methods by reading this [article](https://www.telesens.co/2019/04/04/distributed-data-parallel-training-using-pytorch-on-aws/).
@@ -179,9 +154,7 @@ Here are the same benchmarking results gathered in a table for convenience:
 | 2:DDP  | Y      | 101s |
 | 2:DDP  | N      | 131s |
 
-As you can see, in this case DP is ~10% slower than DDP with NVlink, but ~15% faster than DDP without NVlink.
-The real difference will depend on how much data each GPU needs to sync with the others - the more there is to sync, 
-the more a slow link will impede the overall runtime.
+As you can see, in this case DP is ~10% slower than DDP with NVlink, but ~15% faster than DDP without NVlink. **The real difference will depend on how much data each GPU needs to sync with the others - the more there is to sync, the more a slow link will impede the overall runtime.**
 
 ## ZeRO Data Parallelism
 
