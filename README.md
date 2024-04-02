@@ -47,7 +47,7 @@
 |[Quantization](https://huggingface.co/docs/transformers/quantization)|||
 |[Methods and tools for efficient training on a single GPU](https://huggingface.co/docs/transformers/perf_train_gpu_one)|[Methods and tools for efficient training on a single GPU](docs/source/en/perf_train_gpu_one.md)|None|
 |[Efficient Training on Multiple GPUs](https://huggingface.co/docs/transformers/perf_train_gpu_many)|[Efficient Training on Multiple GPUs](docs/source/en/perf_train_gpu_many.md)|None|
-|[Fully Sharded Data Parallel](https://huggingface.co/docs/transformers/fsdp)|||
+|[Fully Sharded Data Parallel](https://huggingface.co/docs/transformers/fsdp)|[Fully Sharded Data Parallel](docs/source/en/fsdp.md)|[完全分片数据并行](docs/source/zh/fsdp.md)|
 |[DeepSpeed](https://huggingface.co/docs/transformers/deepspeed)|||
 |[Hyperparameter Search using Trainer API](https://huggingface.co/docs/transformers/hpo_train)|||
 |[CPU inference](https://huggingface.co/docs/transformers/perf_infer_cpu)|||
