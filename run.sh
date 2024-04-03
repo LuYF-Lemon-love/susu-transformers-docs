@@ -1,4 +1,4 @@
 #!/bin/bash
 git add .
-git commit -m "修改 docs/source/en/fsdp.md docs/source/zh/fsdp.md"
+git commit -m "修改 docs/source/en/deepspeed.md"
 git push
