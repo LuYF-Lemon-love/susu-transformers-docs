@@ -2,7 +2,7 @@
 # docs/source/en/deepspeed.md
 # 
 # git pull from huggingface/transformers by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Mar 22, 2024
-# updated by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Apr 3, 2024
+# updated by LuYF-Lemon-love <luyanfeng_nlp@qq.com> on Apr 4, 2024
 # 
 # 该文档介绍了 DeepSpeed。
 -->
@@ -436,12 +436,9 @@ You can set the parameters to `"auto"` or manually input your own desired values
 
 ### Precision
 
-Deepspeed supports fp32, fp16, and bf16 mixed precision.
+**Deepspeed supports fp32, fp16, and bf16 mixed precision.**
 
-<hfoptions id="precision">
-<hfoption id="fp32">
-
-If your model doesn't work well with mixed precision, for example if it wasn't pretrained in mixed precision, you may encounter overflow or underflow issues which can cause NaN loss. For these cases, you should use full fp32 precision by explicitly disabling the default fp16 mode.
+**If your model doesn't work well with mixed precision, for example if it wasn't pretrained in mixed precision, you may encounter overflow or underflow issues which can cause NaN loss.** For these cases, you should use full fp32 precision by explicitly disabling the default fp16 mode.
 
 ```yaml
 {
@@ -453,10 +450,7 @@ If your model doesn't work well with mixed precision, for example if it wasn't p
 
 For Ampere GPUs and PyTorch > 1.7, it automatically switches to the more efficient [tf32](https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices) format for some operations but the results are still in fp32. You can control it from the [`Trainer`] by setting `--tf32` to enable it, and `--tf32 0` or `--no_tf32` to disable it.
 
-</hfoption>
-<hfoption id="fp16">
-
-To configure PyTorch AMP-like fp16 mixed precision reduces memory usage and accelerates training speed. [`Trainer`] automatically enables or disables fp16 based on the value of `args.fp16_backend`, and the rest of the config can be set by you. fp16 is enabled from the command line when the following arguments are passed: `--fp16`, `--fp16_backend amp` or `--fp16_full_eval`.
+**To configure PyTorch AMP-like fp16 mixed precision reduces memory usage and accelerates training speed.** [`Trainer`] automatically enables or disables fp16 based on the value of `args.fp16_backend`, and the rest of the config can be set by you. fp16 is enabled from the command line when the following arguments are passed: `--fp16`, `--fp16_backend amp` or `--fp16_full_eval`.
 
 ```yaml
 {
@@ -484,10 +478,7 @@ To configure Apex-like fp16 mixed precision, setup the config as shown below wit
 }
 ```
 
-</hfoption>
-<hfoption id="bf16">
-
-To use bf16, you'll need at least DeepSpeed==0.6.0. bf16 has the same dynamic range as fp32 and doesn’t require loss scaling. However, if you use [gradient accumulation](#gradient-accumulation) with bf16, gradients are accumulated in bf16 which may not be desired because this format's low precision can lead to lossy accumulation.
+To use bf16, you'll need at least DeepSpeed==0.6.0. **bf16 has the same dynamic range as fp32 and doesn’t require loss scaling.** However, **if you use [gradient accumulation](#gradient-accumulation) with bf16, gradients are accumulated in bf16 which may not be desired because this format's low precision can lead to lossy accumulation.**
 
 bf16 can be setup in the config file or enabled from the command line when the following arguments are passed: `--bf16` or `--bf16_full_eval`.
 
@@ -499,12 +490,9 @@ bf16 can be setup in the config file or enabled from the command line when the f
 }
 ```
 
-</hfoption>
-</hfoptions>
-
 ### Batch size
 
-The batch size can be auto-configured or explicitly set. If you choose to use the `"auto"` option, [`Trainer`] sets `train_micro_batch_size_per_gpu` to the value of args.`per_device_train_batch_size` and `train_batch_size` to `args.world_size * args.per_device_train_batch_size * args.gradient_accumulation_steps`.
+The batch size can be auto-configured or explicitly set. **If you choose to use the `"auto"` option, [`Trainer`] sets `train_micro_batch_size_per_gpu` to the value of args.`per_device_train_batch_size` and `train_batch_size` to `args.world_size * args.per_device_train_batch_size * args.gradient_accumulation_steps`.**
 
 ```yaml
 {
@@ -515,7 +503,7 @@ The batch size can be auto-configured or explicitly set. If you choose to use th
 
 ### Gradient accumulation
 
-Gradient accumulation can be auto-configured or explicitly set. If you choose to use the `"auto"` option, [`Trainer`] sets it to the value of `args.gradient_accumulation_steps`.
+Gradient accumulation can be auto-configured or explicitly set. **If you choose to use the `"auto"` option, [`Trainer`] sets it to the value of `args.gradient_accumulation_steps`.**
 
 ```yaml
 {
@@ -526,7 +514,7 @@ Gradient accumulation can be auto-configured or explicitly set. If you choose to
 
 ### Gradient clipping
 
-Gradient clipping can be auto-configured or explicitly set. If you choose to use the `"auto"` option, [`Trainer`] sets it to the value of `args.max_grad_norm`.
+Gradient clipping can be auto-configured or explicitly set. **If you choose to use the `"auto"` option, [`Trainer`] sets it to the value of `args.max_grad_norm`.**
 
 ```yaml
 {
@@ -536,13 +524,13 @@ Gradient clipping can be auto-configured or explicitly set. If you choose to use
 
 ### Communication data type
 
-For communication collectives like reduction, gathering and scattering operations, a separate data type is used.
+For communication collectives like **reduction**, **gathering** and **scattering** operations, a separate data type is used.
 
-All gather and scatter operations are performed in the same data type the data is in. For example, if you're training with bf16, the data is also gathered in bf16 because gathering is a non-lossy operation.
+**All gather and scatter operations are performed in the same data type the data is in.** For example, if you're training with bf16, the data is also gathered in bf16 because gathering is a non-lossy operation.
 
-Reduce operations are lossy, for example when gradients are averaged across multiple GPUs. When the communication is done in fp16 or bf16, it is more likely to be lossy because adding multiple numbers in low precision isn't exact. This is especially the case with bf16 which has a lower precision than fp16. For this reason, fp16 is the default for reduction operations because the loss is minimal when averaging gradients.
+**Reduce operations are lossy, for example when gradients are averaged across multiple GPUs.** When the communication is done in fp16 or bf16, it is more likely to be lossy because adding multiple numbers in low precision isn't exact. This is especially the case with bf16 which has a lower precision than fp16. **For this reason, fp16 is the default for reduction operations because the loss is minimal when averaging gradients.**
 
-You can choose the communication data type by setting the `communication_data_type` parameter in the config file. For example, choosing fp32 adds a small amount of overhead but ensures the reduction operation is accumulated in fp32 and when it is ready, it is downcasted to whichever half-precision dtype you're training in.
+You can choose the communication data type by setting the `communication_data_type` parameter in the config file. **For example, choosing fp32 adds a small amount of overhead but ensures the reduction operation is accumulated in fp32 and when it is ready, it is downcasted to whichever half-precision dtype you're training in.**
 
 ```yaml
 {
@@ -556,11 +544,7 @@ DeepSpeed can be deployed by different launchers such as [torchrun](https://pyto
 
 This guide will show you how to deploy DeepSpeed with the `deepspeed` launcher for different training setups. You can check out this [post](https://github.com/huggingface/transformers/issues/8771#issuecomment-759248400) for more practical usage examples.
 
-
-<hfoptions id="deploy">
-<hfoption id="multi-GPU">
-
-To deploy DeepSpeed on multiple GPUs, add the `--num_gpus` parameter. If you want to use all available GPUs, you don't need to add `--num_gpus`. The example below uses 2 GPUs.
+**To deploy DeepSpeed on multiple GPUs, add the `--num_gpus` parameter. If you want to use all available GPUs, you don't need to add `--num_gpus`.** The example below uses 2 GPUs.
 
 ```bash
 deepspeed --num_gpus=2 examples/pytorch/translation/run_translation.py \
@@ -572,10 +556,7 @@ deepspeed --num_gpus=2 examples/pytorch/translation/run_translation.py \
 --source_lang en --target_lang ro
 ```
 
-</hfoption>
-<hfoption id="single-GPU">
-
-To deploy DeepSpeed on a single GPU, add the `--num_gpus` parameter. It isn't necessary to explicitly set this value if you only have 1 GPU because DeepSpeed deploys all GPUs it can see on a given node.
+**To deploy DeepSpeed on a single GPU, add the `--num_gpus` parameter. It isn't necessary to explicitly set this value if you only have 1 GPU because DeepSpeed deploys all GPUs it can see on a given node.**
 
 ```bash
 deepspeed --num_gpus=1 examples/pytorch/translation/run_translation.py \
@@ -589,23 +570,16 @@ deepspeed --num_gpus=1 examples/pytorch/translation/run_translation.py \
 
 DeepSpeed is still useful with just 1 GPU because you can:
 
-1. Offload some computations and memory to the CPU to make more GPU resources available to your model to use a larger batch size or fit a very large model that normally won't fit.
-2. Minimize memory fragmentation with it's smart GPU memory management system which also allows you to fit bigger models and data batches.
-
-<Tip>
+1. **Offload some computations and memory to the CPU to make more GPU resources available to your model to use a larger batch size or fit a very large model that normally won't fit.**
+2. **Minimize memory fragmentation with it's smart GPU memory management system which also allows you to fit bigger models and data batches.**
 
 Set the `allgather_bucket_size` and `reduce_bucket_size` values to 2e8 in the [ZeRO-2](#zero-configuration) configuration file to get better performance on a single GPU.
 
-</Tip>
-
-</hfoption>
-</hfoptions>
-
 ### Multi-node deployment
 
-A node is one or more GPUs for running a workload. A more powerful setup is a multi-node setup which can be launched with the `deepspeed` launcher. For this guide, let's assume there are two nodes with 8 GPUs each. The first node can be accessed `ssh hostname1` and the second node with `ssh hostname2`. Both nodes must be able to communicate with each other locally over ssh without a password.
+A node is one or more GPUs for running a workload. A more powerful setup is a multi-node setup which can be launched with the `deepspeed` launcher. For this guide, let's assume there are two nodes with 8 GPUs each. The first node can be accessed `ssh hostname1` and the second node with `ssh hostname2`. **Both nodes must be able to communicate with each other locally over ssh without a password.**
 
-By default, DeepSpeed expects your multi-node environment to use a shared storage. If this is not the case and each node can only see the local filesystem, you need to adjust the config file to include a [`checkpoint`](https://www.deepspeed.ai/docs/config-json/#checkpoint-options) to allow loading without access to a shared filesystem:
+**By default, DeepSpeed expects your multi-node environment to use a shared storage.** If this is not the case and each node can only see the local filesystem, you need to adjust the config file to include a [`checkpoint`](https://www.deepspeed.ai/docs/config-json/#checkpoint-options) to allow loading without access to a shared filesystem:
 
 ```yaml
 {
@@ -617,18 +591,12 @@ By default, DeepSpeed expects your multi-node environment to use a shared storag
 
 You could also use the [`Trainer`]'s `--save_on_each_node` argument to automatically add the above `checkpoint` to your config.
 
-<hfoptions id="multinode">
-<hfoption id="torchrun">
-
-For [torchrun](https://pytorch.org/docs/stable/elastic/run.html), you have to ssh to each node and run the following command on both of them. The launcher waits until both nodes are synchronized before launching the training.
+**For [torchrun](https://pytorch.org/docs/stable/elastic/run.html), you have to ssh to each node and run the following command on both of them. The launcher waits until both nodes are synchronized before launching the training.**
 
 ```bash
 python -m torch.run --nproc_per_node=8 --nnode=2 --node_rank=0 --master_addr=hostname1 \
 --master_port=9901 your_program.py <normal cl args> --deepspeed ds_config.json
 ```
-
-</hfoption>
-<hfoption id="deepspeed">
 
 For the `deepspeed` launcher, start by creating a `hostfile`.
 
@@ -637,7 +605,7 @@ hostname1 slots=8
 hostname2 slots=8
 ```
 
-Then you can launch the training with the following command. The `deepspeed` launcher automatically launches the command on both nodes at once.
+Then you can launch the training with the following command. **The `deepspeed` launcher automatically launches the command on both nodes at once.**
 
 ```bash
 deepspeed --num_gpus 8 --num_nodes 2 --hostfile hostfile --master_addr hostname1 --master_port=9901 \
@@ -645,9 +613,6 @@ your_program.py <normal cl args> --deepspeed ds_config.json
 ```
 
 Check out the [Resource Configuration (multi-node)](https://www.deepspeed.ai/getting-started/#resource-configuration-multi-node) guide for more details about configuring multi-node compute resources.
-
-</hfoption>
-</hfoptions>
 
 ### SLURM
 
@@ -680,7 +645,7 @@ sbatch launch.slurm
 
 ### Notebook
 
-The `deepspeed` launcher doesn't support deployment from a notebook so you'll need to emulate the distributed environment. However, this only works for 1 GPU. If you want to use more than 1 GPU, you must use a multi-process environment for DeepSpeed to work. This means you have to use the `deepspeed` launcher which can't be emulated as shown here.
+The `deepspeed` launcher doesn't support deployment from a notebook so you'll need to emulate the distributed environment. **However, this only works for 1 GPU. If you want to use more than 1 GPU, you must use a multi-process environment for DeepSpeed to work.** This means you have to use the `deepspeed` launcher which can't be emulated as shown here.
 
 ```py
 # DeepSpeed requires a distributed environment even when only one process is used.
@@ -764,14 +729,14 @@ cat <<'EOT' > ds_config_zero3.json
 EOT
 ```
 
-If the training script is in a file and not in a notebook cell, you can launch `deepspeed` normally from the shell in a notebook cell. For example, to launch `run_translation.py`:
+**If the training script is in a file and not in a notebook cell, you can launch `deepspeed` normally from the shell in a notebook cell. For example, to launch `run_translation.py`:**
 
 ```py
 !git clone https://github.com/huggingface/transformers
 !cd transformers; deepspeed examples/pytorch/translation/run_translation.py ...
 ```
 
-You could also use `%%bash` magic and write multi-line code to run the shell program, but you won't be able to view the logs until training is complete. With `%%bash` magic, you don't need to emulate a distributed environment.
+**You could also use `%%bash` magic and write multi-line code to run the shell program, but you won't be able to view the logs until training is complete.** With `%%bash` magic, you don't need to emulate a distributed environment.
 
 ```py
 %%bash
@@ -785,10 +750,7 @@ deepspeed examples/pytorch/translation/run_translation.py ...
 
 DeepSpeed stores the main full precision fp32 weights in custom checkpoint optimizer files (the glob pattern looks like `global_step*/*optim_states.pt`) and are saved under the normal checkpoint.
 
-<hfoptions id="save">
-<hfoption id="fp16">
-
-A model trained with ZeRO-2 saves the pytorch_model.bin weights in fp16. To save the model weights in fp16 for a model trained with ZeRO-3, you need to set `"stage3_gather_16bit_weights_on_model_save": true` because the model weights are partitioned across multiple GPUs. Otherwise, the [`Trainer`] won't save the weights in fp16 and it won't create a pytorch_model.bin file. This is because DeepSpeed's state_dict contains a placeholder instead of the real weights and you won't be able to load them.
+A model trained with ZeRO-2 saves the pytorch_model.bin weights in fp16. **To save the model weights in fp16 for a model trained with ZeRO-3, you need to set `"stage3_gather_16bit_weights_on_model_save": true` because the model weights are partitioned across multiple GPUs.** Otherwise, the [`Trainer`] won't save the weights in fp16 and it won't create a pytorch_model.bin file. This is because DeepSpeed's state_dict contains a placeholder instead of the real weights and you won't be able to load them.
 
 ```yaml
 {
@@ -798,10 +760,7 @@ A model trained with ZeRO-2 saves the pytorch_model.bin weights in fp16. To save
 }
 ```
 
-</hfoption>
-<hfoption id="fp32">
-
-The full precision weights shouldn't be saved during training because it can require a lot of memory. It is usually best to save the fp32 weights offline after training is complete. But if you have a lot of free CPU memory, it is possible to save the fp32 weights during training. This section covers both online and offline approaches.
+**The full precision weights shouldn't be saved during training because it can require a lot of memory. It is usually best to save the fp32 weights offline after training is complete.** But if you have a lot of free CPU memory, it is possible to save the fp32 weights during training. This section covers both online and offline approaches.
 
 ### Online
 
@@ -827,11 +786,11 @@ fp32_model = load_state_dict_from_zero_checkpoint(trainer.model, checkpoint_dir)
 
 <Tip>
 
-Once `load_state_dict_from_zero_checkpoint` is run, the model is no longer usable in DeepSpeed in the context of the same application. You'll need to initialize the DeepSpeed engine again since `model.load_state_dict(state_dict)` removes all the DeepSpeed magic from it. Only use this at the very end of training.
+Once `load_state_dict_from_zero_checkpoint` is run, the model is no longer usable in DeepSpeed in the context of the same application. You'll need to initialize the DeepSpeed engine again since `model.load_state_dict(state_dict)` removes all the DeepSpeed magic from it. **Only use this at the very end of training.**
 
 </Tip>
 
-You can also extract and load the state_dict of the fp32 weights:
+**You can also extract and load the state_dict of the fp32 weights:**
 
 ```py
 from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint
@@ -843,7 +802,7 @@ model.load_state_dict(state_dict)
 
 ### Offline
 
-DeepSpeed provides a zero_to_fp32.py script at the top-level of the checkpoint folder for extracting weights at any point. This is a standalone script and you don't need a configuration file or [`Trainer`].
+**DeepSpeed provides a zero_to_fp32.py script at the top-level of the checkpoint folder for extracting weights at any point.** This is a standalone script and you don't need a configuration file or [`Trainer`].
 
 For example, if your checkpoint folder looked like this:
 
@@ -863,28 +822,21 @@ drwxrwxr-x 2 stas stas 4.0K Mar 25 19:52 global_step1/
 -rwxrw-r-- 1 stas stas 5.5K Mar 27 13:16 zero_to_fp32.py*
 ```
 
-To reconstruct the fp32 weights from the DeepSpeed checkpoint (ZeRO-2 or ZeRO-3) subfolder `global_step1`, run the following command to create and consolidate the full fp32 weights from multiple GPUs into a single pytorch_model.bin file. The script automatically discovers the subfolder containing the checkpoint.
+To reconstruct the fp32 weights from the DeepSpeed checkpoint (ZeRO-2 or ZeRO-3) subfolder `global_step1`, **run the following command to create and consolidate the full fp32 weights from multiple GPUs into a single pytorch_model.bin file.** The script automatically discovers the subfolder containing the checkpoint.
 
 ```py
 python zero_to_fp32.py . pytorch_model.bin
 ```
 
-<Tip>
-
-Run `python zero_to_fp32.py -h` for more usage details. The script requires 2x the general RAM of the final fp32 weights.
-
-</Tip>
-
-</hfoption>
-</hfoptions>
+Run `python zero_to_fp32.py -h` for more usage details. **The script requires 2x the general RAM of the final fp32 weights.**
 
 ## ZeRO Inference
 
-[ZeRO Inference](https://www.deepspeed.ai/2022/09/09/zero-inference.html) places the model weights in CPU or NVMe memory to avoid burdening the GPU which makes it possible to run inference with huge models on a GPU. Inference doesn't require any large additional amounts of memory for the optimizer states and gradients so you can fit much larger batches and/or sequence lengths on the same hardware.
+**[ZeRO Inference](https://www.deepspeed.ai/2022/09/09/zero-inference.html) places the model weights in CPU or NVMe memory to avoid burdening the GPU which makes it possible to run inference with huge models on a GPU.** Inference doesn't require any large additional amounts of memory for the optimizer states and gradients so you can fit much larger batches and/or sequence lengths on the same hardware.
 
-ZeRO Inference shares the same configuration file as [ZeRO-3](#zero-configuration), and ZeRO-2 and ZeRO-1 configs won't work because they don't provide any benefits for inference.
+**ZeRO Inference shares the same configuration file as [ZeRO-3](#zero-configuration), and ZeRO-2 and ZeRO-1 configs won't work because they don't provide any benefits for inference.**
 
-To run ZeRO Inference, pass your usual training arguments to the [`TrainingArguments`] class and add the `--do_eval` argument.
+**To run ZeRO Inference, pass your usual training arguments to the [`TrainingArguments`] class and add the `--do_eval` argument.**
 
 ```bash
 deepspeed --num_gpus=2 your_program.py <normal cl args> --do_eval --deepspeed ds_config.json
@@ -892,18 +844,11 @@ deepspeed --num_gpus=2 your_program.py <normal cl args> --do_eval --deepspeed ds
 
 ## Non-Trainer DeepSpeed integration
 
-DeepSpeed also works with Transformers without the [`Trainer`] class. This is handled by the [`HfDeepSpeedConfig`] which only takes care of gathering ZeRO-3 parameters and splitting a model across multiple GPUs when you call [`~PreTrainedModel.from_pretrained`].
-
-<Tip>
+DeepSpeed also works with Transformers without the [`Trainer`] class. **This is handled by the [`HfDeepSpeedConfig`] which only takes care of gathering ZeRO-3 parameters and splitting a model across multiple GPUs when you call [`~PreTrainedModel.from_pretrained`].**
 
 If you want everything automatically taken care of for you, try using DeepSpeed with the [`Trainer`]! You'll need to follow the [DeepSpeed documentation](https://www.deepspeed.ai/), and manually configure the parameter values in the config file (you can't use the `"auto"` value).
 
-</Tip>
-
-To efficiently deploy ZeRO-3, you must instantiate the [`HfDeepSpeedConfig`] object before the model and keep that object alive:
-
-<hfoptions id="models">
-<hfoption id="pretrained model">
+**To efficiently deploy ZeRO-3, you must instantiate the [`HfDeepSpeedConfig`] object before the model and keep that object alive:**
 
 ```py
 from transformers.integrations import HfDeepSpeedConfig
@@ -917,10 +862,7 @@ model = AutoModel.from_pretrained("openai-community/gpt2")
 engine = deepspeed.initialize(model=model, config_params=ds_config, ...)
 ```
 
-</hfoption>
-<hfoption id="non-pretrained model">
-
-[`HfDeepSpeedConfig`] is not required for ZeRO-1 or ZeRO-2.
+**[`HfDeepSpeedConfig`] is not required for ZeRO-1 or ZeRO-2.**
 
 ```py
 from transformers.integrations import HfDeepSpeedConfig
@@ -935,19 +877,16 @@ model = AutoModel.from_config(config)
 engine = deepspeed.initialize(model=model, config_params=ds_config, ...)
 ```
 
-</hfoption>
-</hfoptions>
-
 ### Non-Trainer ZeRO Inference
 
 To run ZeRO Inference without the [`Trainer`] in cases where you can’t fit a model onto a single GPU, try using additional GPUs or/and offloading to CPU memory. The important nuance to understand here is that the way ZeRO is designed, you can process different inputs on different GPUs in parallel.
 
 Make sure to:
 
-* disable CPU offload if you have enough GPU memory (since it slows things down).
-* enable bf16 if you have an Ampere or newer GPU to make things faster. If you don’t have one of these GPUs, you may enable fp16 as long as you don’t use a model pretrained in bf16 (T5 models) because it may lead to an overflow error.
+* **disable CPU offload if you have enough GPU memory (since it slows things down).**
+* **enable bf16 if you have an Ampere or newer GPU to make things faster. If you don’t have one of these GPUs, you may enable fp16 as long as you don’t use a model pretrained in bf16 (T5 models) because it may lead to an overflow error.**
 
-Take a look at the following script to get a better idea of how to run ZeRO Inference without the [`Trainer`] on a model that won't fit on a single GPU.
+**Take a look at the following script to get a better idea of how to run ZeRO Inference without the [`Trainer`] on a model that won't fit on a single GPU.**
 
 ```py
 #!/usr/bin/env python
@@ -1085,7 +1024,7 @@ text_out = tokenizer.decode(outputs[0], skip_special_tokens=True)
 print(f"rank{rank}:\n   in={text_in}\n  out={text_out}")
 ```
 
-Save the script as t0.py and launch it:
+**Save the script as t0.py and launch it:**
 
 ```bash
 $ deepspeed --num_gpus 2 t0.py
@@ -1101,9 +1040,9 @@ This is a very basic example and you'll want to adapt it to your use case.
 
 ### Generate
 
-Using multiple GPUs with ZeRO-3 for generation requires synchronizing the GPUs by setting `synced_gpus=True` in the [`~GenerationMixin.generate`] method. Otherwise, if one GPU is finished generating before another one, the whole system hangs because the remaining GPUs haven't received the weight shard from the GPU that finished first.
+**Using multiple GPUs with ZeRO-3 for generation requires synchronizing the GPUs by setting `synced_gpus=True` in the [`~GenerationMixin.generate`] method.** Otherwise, if one GPU is finished generating before another one, the whole system hangs because the remaining GPUs haven't received the weight shard from the GPU that finished first.
 
-For Transformers>=4.28, if `synced_gpus` is automatically set to `True` if multiple GPUs are detected during generation.
+For Transformers>=4.28, **if `synced_gpus` is automatically set to `True` if multiple GPUs are detected during generation.**
 
 ## Troubleshoot
 
