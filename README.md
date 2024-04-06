@@ -43,7 +43,7 @@
 |[Fully Sharded Data Parallel](https://huggingface.co/docs/transformers/fsdp)|[Fully Sharded Data Parallel](docs/source/en/fsdp.md)|[完全分片数据并行](docs/source/zh/fsdp.md)|
 |[DeepSpeed](https://huggingface.co/docs/transformers/deepspeed)|[DeepSpeed](docs/source/en/deepspeed.md)|None|
 |[Hyperparameter Search using Trainer API](https://huggingface.co/docs/transformers/hpo_train)|||
-|[CPU inference](https://huggingface.co/docs/transformers/perf_infer_cpu)|||
+|[CPU inference](https://huggingface.co/docs/transformers/perf_infer_cpu)|[CPU inference](docs/source/en/perf_infer_cpu.md)|None|
 |[GPU inference](https://huggingface.co/docs/transformers/perf_infer_gpu_one)|||
 |[Instantiating a big model](https://huggingface.co/docs/transformers/big_models)|||
 |[Optimize inference using torch.compile()](https://huggingface.co/docs/transformers/perf_torch_compile)|||
