@@ -44,7 +44,7 @@
 |[DeepSpeed](https://huggingface.co/docs/transformers/deepspeed)|[DeepSpeed](docs/source/en/deepspeed.md)|None|
 |[Hyperparameter Search using Trainer API](https://huggingface.co/docs/transformers/hpo_train)|||
 |[CPU inference](https://huggingface.co/docs/transformers/perf_infer_cpu)|[CPU inference](docs/source/en/perf_infer_cpu.md)|None|
-|[GPU inference](https://huggingface.co/docs/transformers/perf_infer_gpu_one)|||
+|[GPU inference](https://huggingface.co/docs/transformers/perf_infer_gpu_one)|[GPU inference](docs/source/en/perf_infer_gpu_one.md)|None|
 |[Instantiating a big model](https://huggingface.co/docs/transformers/big_models)|||
 |[Optimize inference using torch.compile()](https://huggingface.co/docs/transformers/perf_torch_compile)|||
 |[Building custom models](https://huggingface.co/docs/transformers/main/en/custom_models)|[Building custom models](docs/source/en/custom_models.md)|[共享自定义模型](docs/source/zh/custom_models.md)|
