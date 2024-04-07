@@ -48,7 +48,7 @@
 |[Instantiating a big model](https://huggingface.co/docs/transformers/big_models)|||
 |[Optimize inference using torch.compile()](https://huggingface.co/docs/transformers/perf_torch_compile)|||
 |[Building custom models](https://huggingface.co/docs/transformers/main/en/custom_models)|[Building custom models](docs/source/en/custom_models.md)|[共享自定义模型](docs/source/zh/custom_models.md)|
-|[Text generation strategies](https://huggingface.co/docs/transformers/generation_strategies)|||
+|[Text generation strategies](https://huggingface.co/docs/transformers/generation_strategies)|[Text generation strategies](docs/source/en/generation_strategies.md)|None|
 
 ## Online demos
 
